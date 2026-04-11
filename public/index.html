@@ -1,0 +1,3136 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Archipelago Web Panel</title>
+
+<style>
+:root {
+  --bg: #05070f;
+  --panel: rgba(10, 16, 40, 0.85);
+  --panel2: rgba(20, 30, 70, 0.85);
+
+  --text: #e6f1ff;
+  --muted: #6f89b0;
+
+  --accent: #00eaff;
+  --accent2: #ff2bd6;
+
+  --good: #00ff9c;
+  --bad: #ff4d6d;
+
+  --border: rgba(0, 234, 255, 0.25);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  min-height: 100%;
+}
+
+body {
+  font-family: Inter, system-ui, Arial, sans-serif;
+  background: linear-gradient(180deg, #08101d, #0e1730 50%, #111936);
+  background-attachment: fixed;
+  color: var(--text);
+}
+
+.wrap {
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+/* =========================
+   STATUS (FIXED + ENHANCED)
+   ========================= */
+
+.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.03);
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 460px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease;
+}
+
+.status::before {
+  content: "";
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  flex: 0 0 10px;
+  background: #6b7280;
+  box-shadow: 0 0 0 0 rgba(107, 114, 128, 0.45);
+}
+
+/* CONNECTED */
+.status.good {
+  color: var(--text);
+  border-color: rgba(0, 255, 156, 0.6);
+
+  box-shadow:
+    0 0 8px rgba(0,255,156,0.4),
+    0 0 20px rgba(0,255,156,0.2);
+}
+
+.status.good::before {
+  background: #00ff9c;
+  box-shadow: 0 0 8px #00ff9c, 0 0 16px #00ff9c;
+}
+
+/* DISCONNECTED / ERROR */
+.status.bad {
+  color: #ffd4d4;
+  border-color: rgba(255, 143, 143, 0.45);
+  box-shadow: 0 0 0 1px rgba(255, 143, 143, 0.08), 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.status.bad::before {
+  background: var(--bad);
+}
+
+/* CONNECTING */
+.status.connecting {
+  color: #dbeafe;
+  border-color: rgba(126, 182, 255, 0.45);
+  box-shadow: 0 0 0 1px rgba(126, 182, 255, 0.08), 0 8px 24px rgba(0,0,0,0.15);
+}
+
+.status.connecting::before {
+  width: 12px;
+  height: 12px;
+  background: transparent;
+  border: 2px solid rgba(126, 182, 255, 0.35);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: statusSpin 0.8s linear infinite;
+  box-shadow: none;
+}
+
+/* Animations */
+@keyframes statusPulse {
+  0% { box-shadow: 0 0 0 0 rgba(115, 226, 167, 0.55); }
+  70% { box-shadow: 0 0 0 8px rgba(115, 226, 167, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(115, 226, 167, 0); }
+}
+
+@keyframes statusSpin {
+  to { transform: rotate(360deg); }
+}
+
+/* =========================
+   LAYOUT / UI
+   ========================= */
+
+.grid {
+  display: grid;
+  grid-template-columns: 380px 1fr 360px;
+  gap: 16px;
+  align-items: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  background: rgba(10, 16, 40, 0.65);
+  border: 1px solid rgba(0, 234, 255, 0.25);
+  border-radius: 16px;
+  padding: 16px;
+
+  backdrop-filter: blur(10px);
+
+  box-shadow:
+    0 0 0 1px rgba(0, 234, 255, 0.08),
+    0 0 20px rgba(0, 234, 255, 0.08),
+    0 10px 40px rgba(0,0,0,0.6);
+}
+
+.card.stack > * + * {
+  margin-top: 12px;
+}
+
+h1, h2 {
+  margin: 0 0 12px;
+}
+
+h1 {
+  font-size: 24px;
+}
+
+h2 {
+  font-size: 18px;
+}
+
+label {
+  display: block;
+  font-size: 13px;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+
+input, select, button, textarea {
+  width: 100%;
+  min-width: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 234, 255, 0.25);
+  background: rgba(10, 16, 40, 0.9);
+  color: var(--text);
+  padding: 10px 12px;
+  font: inherit;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: #00eaff;
+  box-shadow: 0 0 8px rgba(0,234,255,0.5);
+}
+
+button {
+  background: linear-gradient(90deg, #005bff, #00eaff);
+  color: #fff;
+
+  box-shadow:
+    0 0 10px rgba(0,234,255,0.4),
+    inset 0 0 8px rgba(255,255,255,0.1);
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 14px rgba(0,234,255,0.7),
+    0 0 28px rgba(0,234,255,0.4);
+}
+
+textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+button {
+  cursor: pointer;
+  background: linear-gradient(180deg, #2c62ba, #274f95);
+  border: none;
+  font-weight: 600;
+}
+
+button.secondary {
+  background: #222b52;
+  border: 1px solid var(--border);
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.good {
+  color: var(--good);
+}
+
+.bad {
+  color: var(--bad);
+}
+
+.small {
+  font-size: 12px;
+}
+
+.list {
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.item {
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255,255,255,0.03);
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+/* Players */
+.players-section {
+  display: block;
+}
+
+#players.list {
+  overflow: visible;
+  max-height: none;
+  padding-right: 0;
+}
+
+.players-placeholder {
+  text-align: center;
+  padding: 24px 8px;
+}
+
+/* Log */
+.log {
+  position: relative;
+  height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+
+  background: rgba(2, 6, 17, 0.58);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  border-radius: 14px;
+  padding: 12px;
+  border: 1px solid rgba(0, 234, 255, 0.22);
+
+  box-shadow:
+    inset 0 0 20px rgba(0, 234, 255, 0.06),
+    0 0 18px rgba(0, 234, 255, 0.10),
+    0 10px 30px rgba(0,0,0,0.35);
+
+  color: #bfe7ff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.45;
+  
+}
+
+.log::before,
+.log::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+.log::before {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255,255,255,0.045) 0px,
+      rgba(255,255,255,0.045) 1px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 4px
+    );
+  mix-blend-mode: soft-light;
+  opacity: 0.28;
+}
+
+.log::after {
+  background:
+    linear-gradient(rgba(0, 234, 255, 0.05), rgba(255, 43, 214, 0.03)),
+    radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 70%);
+  opacity: 0.45;
+}
+
+.log {
+  animation: crtFlicker 6s infinite;
+}
+
+@keyframes crtFlicker {
+  0%, 100% { opacity: 1; }
+  2% { opacity: 0.985; }
+  3% { opacity: 0.998; }
+  7% { opacity: 0.992; }
+  8% { opacity: 1; }
+  52% { opacity: 0.996; }
+  53% { opacity: 0.989; }
+  54% { opacity: 1; }
+}
+
+.log::after {
+  background:
+    radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.28) 100%),
+    linear-gradient(rgba(0, 234, 255, 0.05), rgba(255, 43, 214, 0.03));
+  opacity: 0.55;
+}
+
+/* Right column */
+.right-card {
+  height: 600px;
+  min-height: 600px;
+}
+
+.items-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+#items.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 100%;
+}
+
+/* Scrollbars */
+.list::-webkit-scrollbar,
+.log::-webkit-scrollbar {
+  width: 10px;
+}
+
+.list::-webkit-scrollbar-track,
+.log::-webkit-scrollbar-track {
+  background: rgba(255,255,255,0.04);
+  border-radius: 999px;
+}
+
+.list::-webkit-scrollbar-thumb,
+.log::-webkit-scrollbar-thumb {
+  background: #31427e;
+  border-radius: 999px;
+}
+
+.list::-webkit-scrollbar-thumb:hover,
+.log::-webkit-scrollbar-thumb:hover {
+  background: #3d539d;
+}
+
+/* Progress bar */
+.progress-bar {
+  height: 8px;
+  background: rgba(255,255,255,0.08);
+  border-radius: 999px;
+  overflow: hidden;
+  margin-top: 6px;
+}
+
+.progress-bar {
+  position: relative;
+  height: 14px;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 999px;
+  overflow: hidden;
+  border: 1px solid rgba(0, 234, 255, 0.25);
+
+  box-shadow:
+    inset 0 0 10px rgba(0, 234, 255, 0.08),
+    0 0 12px rgba(0, 234, 255, 0.15);
+}
+.progress-fill.bump {
+  box-shadow:
+    0 0 14px #00ffcc,
+    0 0 30px #00ffcc,
+    0 0 60px rgba(0,255,200,0.8);
+  filter: brightness(1.2);
+}
+
+.progress-fill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+
+  background: linear-gradient(
+    120deg,
+    transparent,
+    rgba(255,255,255,0.35),
+    transparent
+  );
+
+  animation: neonSweep 2s linear infinite;
+}
+
+@keyframes neonSweep {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(200%); }
+}
+
+.progress-fill {
+  position: relative;
+  height: 100%;
+  width: 0%;
+
+  background: linear-gradient(
+    90deg,
+    #00eaff,
+    #00ff9c,
+    #7cff00
+  );
+
+  box-shadow:
+    0 0 10px #00ffcc,
+    0 0 20px rgba(0,255,200,0.6);
+
+  transition:
+    width 0.8s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.25s ease;
+
+  overflow: hidden;
+}
+
+.progress-fill::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -30%;
+  width: 30%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255,255,255,0),
+    rgba(255,255,255,0.28),
+    rgba(255,255,255,0)
+  );
+  animation: progressShimmer 2s linear infinite;
+}
+
+@keyframes progressShimmer {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-350%);
+  }
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+
+  .log,
+  .right-card {
+    height: auto;
+    min-height: 0;
+  }
+
+  #items.list {
+    max-height: 320px;
+  }
+}
+
+.latest-item {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  overflow: hidden;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.latest-item strong {
+  color: var(--text);
+}
+
+.latest-item-flash {
+  border-color: rgba(115, 226, 167, 0.7);
+  box-shadow:
+    0 0 0 1px rgba(115, 226, 167, 0.18),
+    0 0 20px rgba(115, 226, 167, 0.18),
+    0 10px 28px rgba(0,0,0,0.20);
+  animation: latestItemPulse 0.7s ease;
+}
+
+@keyframes latestItemPulse {
+  0% {
+    transform: scale(0.985);
+    box-shadow:
+      0 0 0 0 rgba(115, 226, 167, 0.0),
+      0 0 0 rgba(115, 226, 167, 0.0),
+      0 10px 28px rgba(0,0,0,0.12);
+  }
+  35% {
+    transform: scale(1.01);
+    box-shadow:
+      0 0 0 1px rgba(115, 226, 167, 0.25),
+      0 0 28px rgba(115, 226, 167, 0.28),
+      0 10px 28px rgba(0,0,0,0.20);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 1px rgba(115, 226, 167, 0.08),
+      0 0 0 rgba(115, 226, 167, 0),
+      0 10px 28px rgba(0,0,0,0.16);
+  }
+}
+
+.hidden {
+  display: none !important;
+}
+
+body.obs-mode {
+  background: transparent;
+}
+
+body.obs-mode .wrap {
+  max-width: none;
+  padding: 0;
+}
+
+body.obs-mode .topbar {
+  display: none;
+}
+
+body.obs-mode .grid {
+  display: block;
+}
+
+body.obs-mode .card {
+  background: rgba(10, 16, 34, 0.78);
+  border: 1px solid rgba(255,255,255,0.18);
+  box-shadow: none;
+  border-radius: 16px;
+}
+
+body.obs-mode.view-progress #sessionCard,
+body.obs-mode.view-compact #sessionCard,
+body.obs-mode.view-log #logCard {
+  width: 100%;
+  max-width: 700px;
+}
+
+body.obs-mode.view-progress #sessionCard,
+body.obs-mode.view-compact #sessionCard {
+  min-height: 0;
+  height: auto;
+}
+
+body.obs-mode.view-log #logCard {
+  min-height: 0;
+  height: auto;
+}
+
+body.obs-mode.view-progress .progress-bar,
+body.obs-mode.view-compact .progress-bar {
+  height: 14px;
+}
+
+body.obs-mode.view-compact #latestItem {
+  margin-top: 4px;
+}
+
+body.obs-mode.view-log #log {
+  height: 400px;
+}
+
+.obs-param-wrap {
+  position: relative;
+}
+
+.obs-param-menu {
+  margin-top: 8px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(20, 27, 52, 0.96);
+  box-shadow: 0 10px 24px rgba(0,0,0,0.22);
+}
+
+.obs-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.obs-check input[type="checkbox"] {
+  width: auto;
+  margin: 0;
+}
+
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.card-head h2 {
+  margin: 0;
+}
+
+.log-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(0, 234, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(8, 14, 34, 0.72);
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.log-toggle:hover {
+  border-color: rgba(0, 234, 255, 0.45);
+  box-shadow:
+    0 0 12px rgba(0, 234, 255, 0.16),
+    inset 0 0 12px rgba(0, 234, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.log-toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0;
+  height: 0;
+}
+
+.log-toggle-box {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  border-radius: 6px;
+  border: 1px solid rgba(0, 234, 255, 0.35);
+  background: linear-gradient(180deg, rgba(12, 20, 48, 0.95), rgba(8, 14, 34, 0.95));
+  box-shadow:
+    inset 0 0 10px rgba(0, 234, 255, 0.06),
+    0 0 8px rgba(0, 234, 255, 0.08);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background 0.2s ease;
+}
+
+.log-toggle-box::after {
+  content: "";
+  position: absolute;
+  left: 5px;
+  top: 2px;
+  width: 5px;
+  height: 9px;
+  border: solid #001018;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg) scale(0);
+  opacity: 0;
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.log-toggle input[type="checkbox"]:checked + .log-toggle-box {
+  border-color: rgba(0, 255, 156, 0.7);
+  background: linear-gradient(180deg, #00eaff, #00ff9c);
+  box-shadow:
+    0 0 10px rgba(0, 255, 156, 0.35),
+    0 0 22px rgba(0, 255, 156, 0.18);
+}
+
+.log-toggle input[type="checkbox"]:checked + .log-toggle-box::after {
+  transform: rotate(45deg) scale(1);
+  opacity: 1;
+}
+
+.log-toggle-text {
+  color: #d9ecff;
+  letter-spacing: 0.01em;
+}
+
+@media (max-width: 700px) {
+  .card-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.log-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.audio-control {
+  min-width: 220px;
+  padding: 10px 12px;
+  border: 1px solid rgba(0, 234, 255, 0.22);
+  border-radius: 999px;
+  background: rgba(8, 14, 34, 0.72);
+  box-shadow:
+    0 0 12px rgba(0, 234, 255, 0.10),
+    inset 0 0 12px rgba(0, 234, 255, 0.04);
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.audio-control:hover {
+  border-color: rgba(0, 234, 255, 0.45);
+  box-shadow:
+    0 0 16px rgba(0, 234, 255, 0.16),
+    inset 0 0 12px rgba(0, 234, 255, 0.05);
+  transform: translateY(-1px);
+}
+
+.audio-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  color: #d9ecff;
+  letter-spacing: 0.01em;
+}
+
+.audio-value {
+  color: var(--accent);
+  font-weight: 700;
+  min-width: 42px;
+  text-align: right;
+}
+
+#audioSlider,
+#volumeSlider {
+  width: 100%;
+}
+
+#volumeSlider {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  padding: 0;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 234, 255, 0.20),
+    rgba(0, 255, 156, 0.25)
+  );
+  box-shadow: inset 0 0 8px rgba(0, 234, 255, 0.18);
+}
+
+#volumeSlider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: 999px;
+  background: transparent;
+}
+
+#volumeSlider::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  margin-top: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.55);
+  background: linear-gradient(180deg, #00eaff, #00ff9c);
+  box-shadow:
+    0 0 10px rgba(0, 255, 156, 0.35),
+    0 0 20px rgba(0, 234, 255, 0.22);
+  cursor: pointer;
+}
+
+#volumeSlider::-moz-range-track {
+  height: 6px;
+  border-radius: 999px;
+  border: none;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 234, 255, 0.20),
+    rgba(0, 255, 156, 0.25)
+  );
+  box-shadow: inset 0 0 8px rgba(0, 234, 255, 0.18);
+}
+
+#volumeSlider::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.55);
+  background: linear-gradient(180deg, #00eaff, #00ff9c);
+  box-shadow:
+    0 0 10px rgba(0, 255, 156, 0.35),
+    0 0 20px rgba(0, 234, 255, 0.22);
+  cursor: pointer;
+}
+
+@media (max-width: 700px) {
+  .log-toolbar {
+    width: 100%;
+    justify-content: stretch;
+  }
+
+  .audio-control {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.obs-toast-layer {
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: min(420px, calc(100vw - 32px));
+  pointer-events: none;
+}
+
+.obs-toast {
+  position: relative;
+  overflow: hidden;
+  border-radius: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255,255,255,0.18);
+  background: rgba(8, 14, 34, 0.88);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  color: var(--text);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    0 0 18px rgba(0, 234, 255, 0.12);
+  transform: translateX(24px) scale(0.98);
+  opacity: 0;
+  animation: obsToastIn 240ms ease forwards;
+}
+
+.obs-toast.hide {
+  animation: obsToastOut 220ms ease forwards;
+}
+
+.obs-toast::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--toast-accent, var(--accent));
+  box-shadow: 0 0 14px var(--toast-accent, var(--accent));
+}
+
+.obs-toast::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(135deg, rgba(255,255,255,0.06), transparent 45%),
+    radial-gradient(circle at top right, rgba(255,255,255,0.10), transparent 32%);
+}
+
+.obs-toast-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+
+.obs-toast-title {
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.2;
+  color: #ffffff;
+}
+
+.obs-toast-badge {
+  flex: 0 0 auto;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #08101d;
+  background: var(--toast-accent, var(--accent));
+  box-shadow: 0 0 12px color-mix(in srgb, var(--toast-accent, var(--accent)) 45%, transparent);
+}
+
+.obs-toast-meta {
+  font-size: 12px;
+  line-height: 1.5;
+  color: #d9ecff;
+}
+
+.obs-toast-meta .muted-line {
+  color: var(--muted);
+}
+
+.obs-toast-progression { --toast-accent: #00ff9c; }
+.obs-toast-useful      { --toast-accent: #00eaff; }
+.obs-toast-trap        { --toast-accent: #ff4d6d; }
+.obs-toast-filler      { --toast-accent: #9aa8c7; }
+
+@keyframes obsToastIn {
+  from {
+    opacity: 0;
+    transform: translateX(24px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+}
+
+@keyframes obsToastOut {
+  from {
+    opacity: 1;
+    transform: translateX(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(30px) scale(0.98);
+  }
+}
+
+/* Keep toasts overlay-only */
+body:not(.obs-mode) .obs-toast-layer {
+  display: none !important;
+}
+
+body.obs-mode.view-item-alert .wrap {
+  max-width: none;
+  padding: 0;
+}
+
+body.obs-mode.view-item-alert .topbar,
+body.obs-mode.view-item-alert #connectionCard,
+body.obs-mode.view-item-alert #logCard,
+body.obs-mode.view-item-alert #sessionCard {
+  display: none !important;
+}
+
+body.obs-mode.view-item-alert .obs-toast-layer {
+  top: 20px;
+  right: 20px;
+  width: min(420px, calc(100vw - 40px));
+}
+
+#hints.list {
+  max-height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.hint-item {
+  position: relative;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(255,255,255,0.04);
+  margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.hint-item::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: rgba(0, 234, 255, 0.35);
+}
+
+.hint-item.hint-found {
+  border-color: rgba(0, 255, 156, 0.35);
+  box-shadow: 0 0 16px rgba(0, 255, 156, 0.10);
+}
+
+.hint-item.hint-found::before {
+  background: var(--good);
+  box-shadow: 0 0 12px var(--good);
+}
+
+.hint-item.hint-unfound {
+  border-color: rgba(255, 189, 89, 0.30);
+}
+
+.hint-item.hint-unfound::before {
+  background: #ffbd59;
+  box-shadow: 0 0 12px rgba(255, 189, 89, 0.5);
+}
+
+.hint-item.hint-important {
+  background: linear-gradient(
+    180deg,
+    rgba(0, 234, 255, 0.08),
+    rgba(255,255,255,0.04)
+  );
+  border-color: rgba(0, 234, 255, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(0, 234, 255, 0.10),
+    0 0 20px rgba(0, 234, 255, 0.12);
+}
+
+.hint-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.hint-title {
+  font-weight: 700;
+  color: var(--text);
+}
+
+.hint-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.hint-badge {
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.hint-badge-found {
+  background: rgba(0, 255, 156, 0.18);
+  color: #9fffd7;
+  border: 1px solid rgba(0, 255, 156, 0.28);
+}
+
+.hint-badge-unfound {
+  background: rgba(255, 189, 89, 0.16);
+  color: #ffd89d;
+  border: 1px solid rgba(255, 189, 89, 0.24);
+}
+
+.hint-badge-important {
+  background: rgba(0, 234, 255, 0.16);
+  color: #aef6ff;
+  border: 1px solid rgba(0, 234, 255, 0.28);
+}
+
+.hint-meta {
+  display: grid;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: #d9ecff;
+}
+
+.hint-meta .muted-line {
+  color: var(--muted);
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.hints-card {
+  min-height: 0;
+}
+
+#hints.list {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+#viewDescription {
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+/* ADD near the other hint styles */
+.hints-head {
+  align-items: flex-start;
+}
+
+.hints-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+@media (max-width: 700px) {
+  .hints-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+</style>
+
+</head>
+<body>
+  <div class="wrap">
+    <div class="topbar">
+      <div>
+        <h1>Archipelago Web Panel</h1>
+        <div class="muted">Archipelago Web Interface</div>
+      </div>
+	  
+      <div id="status" class="status">Disconnected</div>
+    </div>
+
+<div class="grid" id="mainGrid">
+  <div class="card stack" id="connectionCard">
+        <div>
+          <h2>Connection</h2>
+          <label for="apUrl">Archipelago server URL</label>
+          <input id="apUrl" value="ws://127.0.0.1:38281" />
+        </div>
+		
+		        <div class="row">
+          <button id="connectBtn">Connect</button>
+          <button id="disconnectBtn" class="secondary">Disconnect</button>
+        </div>
+
+        <div class="row">
+          <div>
+            <label for="slotName">Slot / player name</label>
+            <input id="slotName" placeholder="Player1" />
+          </div>
+<div>
+  <label for="gameName">Game</label>
+  <select id="gameName">
+    <option value="">Select a game...</option>
+  </select>
+</div>
+        </div>
+
+<div>
+  <label for="password">Password</label>
+  <input id="password" type="password" placeholder="Optional" />
+</div>
+
+<div>
+  <label for="obsLinkOutput">OBS Overlay Link</label>
+  <input id="obsLinkOutput" readonly placeholder="OBS browser source link will appear here" />
+
+  <div class="obs-param-wrap" style="margin-top: 8px;">
+    <button id="obsParamToggleBtn" class="secondary" type="button">OBS Link Options ▼</button>
+
+<div id="obsParamMenu" class="obs-param-menu hidden">
+
+  <label class="obs-check">
+    <input type="checkbox" id="obsParamView" checked />
+    Include view mode
+  </label>
+
+<div style="margin-top: 10px;">
+<label for="obsViewSelect">Overlay view</label>
+<select id="obsViewSelect">
+  <option value="item-alert">Item Alert</option>
+  <option value="log">Log</option>
+  <option value="full">Full</option>
+  <option value="compact">Compact</option>
+</select>
+<div id="viewDescription" class="small muted"></div>
+</div>
+</div>
+  </div>
+
+  <div class="row" style="margin-top: 8px;">
+    <button id="generateObsLinkBtn" class="secondary" type="button">Generate OBS Link</button>
+    <button id="copyObsLinkBtn" class="secondary" type="button">Copy OBS Link</button>
+  </div>
+</div>
+
+        <div class="row">
+          <button id="loginBtn">Send Connect Packet</button>
+          <button id="syncBtn" class="secondary">Sync Items</button>
+        </div>
+
+        <div>
+          <h2>Quick chat / commands</h2>
+          <div class="row">
+            <input id="chatInput" placeholder="Type chat or !players" />
+            <button id="sendChatBtn">Send</button>
+          </div>
+        </div>
+
+        <div>
+          <h2>Room</h2>
+          <div id="roomInfo" class="small muted">No room data yet.</div>
+        </div>
+
+<div class="players-section">
+  <h2>Players</h2>
+  <div id="players" class="list"></div>
+</div>
+      </div>
+
+<div class="card" id="logCard">
+  <div class="card-head">
+    <h2>Live log</h2>
+
+    <div class="log-toolbar">
+      <label class="log-toggle" for="toggleBounced">
+        <input type="checkbox" id="toggleBounced" checked />
+        <span class="log-toggle-box"></span>
+        <span class="log-toggle-text">Show bounced</span>
+      </label>
+
+      <div class="audio-control">
+        <label for="volumeSlider" class="audio-label">
+          Audio
+          <span id="volumeLabel" class="audio-value">100%</span>
+        </label>
+        <input
+          type="range"
+          id="volumeSlider"
+          min="0"
+          max="1"
+          step="0.01"
+          value="1"
+        />
+      </div>
+    </div>
+  </div>
+
+  <div id="log" class="log"></div>
+</div>
+
+<div class="right-column">
+  <div class="card stack right-card" id="sessionCard">
+    <div>
+      <h2>Session state</h2>
+      <div id="sessionState" class="small muted">Not authenticated.</div>
+    </div>
+
+    <div class="items-section">
+      <h2>Latest acquired</h2>
+      <div id="latestItem" class="latest-item muted small">No items yet.</div>
+
+      <h2 style="margin-top: 14px;">Received items</h2>
+      <div id="items" class="list"></div>
+    </div>
+  </div>
+
+<!-- REPLACE the current hints card header block with this -->
+<div class="card stack hints-card" id="hintsCard">
+  <div class="card-head hints-head">
+    <div class="hints-head-main">
+      <h2>Hints</h2>
+      <div id="hintsSummary" class="small muted">No hints yet.</div>
+    </div>
+
+    <label class="log-toggle" for="toggleHideFoundHints">
+      <input type="checkbox" id="toggleHideFoundHints" />
+      <span class="log-toggle-box"></span>
+      <span class="log-toggle-text">Hide found</span>
+    </label>
+  </div>
+
+  <div id="hints" class="list"></div>
+</div>
+</div>
+    </div>
+  </div>
+
+<div id="obsToastLayer" class="obs-toast-layer" aria-live="polite" aria-atomic="false"></div>
+
+  <script>
+    const statusEl = document.getElementById("status");
+    const logEl = document.getElementById("log");
+    const roomInfoEl = document.getElementById("roomInfo");
+    const playersEl = document.getElementById("players");
+    const sessionStateEl = document.getElementById("sessionState");
+    const itemsEl = document.getElementById("items");
+const latestItemEl = document.getElementById("latestItem");
+
+const obsToastLayerEl = document.getElementById("obsToastLayer");
+
+    const apUrlEl = document.getElementById("apUrl");
+	const chatInputEl = document.getElementById("chatInput");
+    const slotNameEl = document.getElementById("slotName");
+    const gameNameEl = document.getElementById("gameName");
+    const passwordEl = document.getElementById("password");
+
+const mainGridEl = document.getElementById("mainGrid");
+const connectionCardEl = document.getElementById("connectionCard");
+const hintsCardEl = document.getElementById("hintsCard");
+const logCardEl = document.getElementById("logCard");
+const sessionCardEl = document.getElementById("sessionCard");
+const progressSectionEl = document.getElementById("progressSection");
+const progressTextEl = document.getElementById("progressText");
+const progressFillEl = document.getElementById("progressFill");
+
+const obsParamToggleBtn = document.getElementById("obsParamToggleBtn");
+const obsParamMenu = document.getElementById("obsParamMenu");
+
+const obsParamPassEl = document.getElementById("obsParamPass");
+const obsParamViewEl = document.getElementById("obsParamView");
+const obsViewSelectEl = document.getElementById("obsViewSelect");
+
+const toggleBouncedEl = document.getElementById("toggleBounced");
+
+const generateObsLinkBtn = document.getElementById("generateObsLinkBtn");
+const copyObsLinkBtn = document.getElementById("copyObsLinkBtn");
+const obsLinkOutputEl = document.getElementById("obsLinkOutput");
+
+const hintsEl = document.getElementById("hints");
+const hintsSummaryEl = document.getElementById("hintsSummary");
+
+
+const toggleHideFoundHintsEl = document.getElementById("toggleHideFoundHints");
+
+let hintsState = [];
+let hideFoundHints = localStorage.getItem("hideFoundHints") === "true";
+let lastHintIds = new Set();
+
+if (toggleHideFoundHintsEl) {
+  toggleHideFoundHintsEl.checked = hideFoundHints;
+  toggleHideFoundHintsEl.addEventListener("change", () => {
+    hideFoundHints = toggleHideFoundHintsEl.checked;
+    localStorage.setItem("hideFoundHints", String(hideFoundHints));
+    renderHints();
+  });
+}
+
+let showBounced = localStorage.getItem("showBounced") === "true";
+
+let shouldAutoReconnect = false;
+let manualDisconnect = false;
+let reconnectTimer = null;
+let reconnectAttempts = 0;
+
+const RECONNECT_DELAY_MS = 3000;
+const MAX_RECONNECT_DELAY_MS = 15000;
+
+const volumeSlider = document.getElementById("volumeSlider");
+const volumeLabel = document.getElementById("volumeLabel");
+
+// ✅ SINGLE source of truth
+let volumeLevel = parseFloat(localStorage.getItem("volume") || "1");
+
+// ✅ Apply initial state
+volumeSlider.value = volumeLevel;
+volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+
+// ✅ Volume slider
+volumeSlider.addEventListener("input", () => {
+  volumeLevel = parseFloat(volumeSlider.value);
+  localStorage.setItem("volume", volumeLevel);
+  volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+});
+
+// =========================
+// URL PARAM HANDLING (OBS)
+// =========================
+
+const urlParams = new URLSearchParams(window.location.search);
+
+const isAutoMode = urlParams.get("auto") === "1";
+
+function getParam(name, fallback = "") {
+  return urlParams.get(name) ?? fallback;
+}
+
+const currentView = (getParam("view", "full") || "full").toLowerCase();
+
+// Apply params to inputs
+function applyUrlParams() {
+  const apUrl = getParam("ap");
+  const slot = getParam("slot");
+  const game = getParam("game");
+  const pass = getParam("pass");
+  const autoconnect = getParam("auto");
+
+  if (apUrl) apUrlEl.value = apUrl;
+  if (slot) slotNameEl.value = slot;
+  if (game) gameNameEl.value = game;
+  if (pass) passwordEl.value = pass;
+
+  return autoconnect === "1" || autoconnect === "true";
+}
+
+function buildConnectPacket() {
+  return [{
+    cmd: "Connect",
+    game: gameNameEl.value.trim(),
+    name: slotNameEl.value.trim(),
+    password: passwordEl.value.trim() || null,
+    uuid: currentUuid,
+    version: { major: 0, minor: 6, build: 0 },
+    tags: ["WebHost"],
+    items_handling: 7,
+    slot_data: false
+  }];
+}
+
+function clearReconnectTimer() {
+  if (reconnectTimer) {
+    clearTimeout(reconnectTimer);
+    reconnectTimer = null;
+  }
+}
+
+function scheduleReconnect() {
+  if (manualDisconnect || !shouldAutoReconnect) {
+    log("Auto-reconnect skipped.", "bad");
+    return;
+  }
+
+  clearReconnectTimer();
+
+  const delay = Math.min(
+    RECONNECT_DELAY_MS * Math.max(1, reconnectAttempts + 1),
+    MAX_RECONNECT_DELAY_MS
+  );
+
+  reconnectAttempts += 1;
+
+  setStatus(`Disconnected. Reconnecting in ${Math.ceil(delay / 1000)}s...`, "connecting");
+  log(`Scheduling reconnect attempt ${reconnectAttempts} in ${delay}ms...`, "bad");
+
+reconnectTimer = setTimeout(() => {
+  const normalizedUrl = normalizeApUrl(apUrlEl.value);
+  apUrlEl.value = normalizedUrl;
+
+  saveLastApUrl(normalizedUrl);
+
+  setStatus(`Reconnecting to ${shortUrl(normalizedUrl)}...`, "connecting");
+  log(`Attempting reconnect to ${normalizedUrl}`, "good");
+
+  sendBrowserMessage({
+    type: "connect-ap",
+    apUrl: normalizedUrl
+  });
+}, delay);
+}
+
+if (toggleBouncedEl) {
+  toggleBouncedEl.checked = showBounced;
+
+  toggleBouncedEl.addEventListener("change", () => {
+    showBounced = toggleBouncedEl.checked;
+    localStorage.setItem("showBounced", showBounced);
+  });
+}
+
+const UUID_COOKIE_NAME = "ap_uuid";
+
+    let browserSocket = null;
+    let roomInfo = null;
+    let connected = null;
+    let receivedItems = [];
+	let dataPackage = {};
+	let playerGameMap = new Map();
+let currentUuid = "";
+
+let hasEverConnected = false;
+
+let pendingConnectPayload = null;
+
+function buildObsBrowserSourceLink() {
+  const url = new URL(window.location.origin + "/");
+
+  const ap = apUrlEl.value.trim();
+  const slot = slotNameEl.value.trim();
+  const game = gameNameEl.value.trim();
+  const pass = passwordEl.value.trim();
+  const selectedView = obsViewSelectEl?.value || "full";
+
+  // always include required OBS boot params
+  if (ap) url.searchParams.set("ap", ap);
+  if (slot) url.searchParams.set("slot", slot);
+  if (game) url.searchParams.set("game", game);
+
+  url.searchParams.set("auto", "1");
+
+  // optional extras
+  if (obsParamPassEl?.checked && pass) {
+    url.searchParams.set("pass", pass);
+  }
+
+  if (obsParamViewEl?.checked && selectedView && selectedView !== "full") {
+    url.searchParams.set("view", selectedView);
+  }
+
+  return url.toString();
+}
+
+if (generateObsLinkBtn && obsLinkOutputEl) {
+  generateObsLinkBtn.addEventListener("click", () => {
+    const link = buildObsBrowserSourceLink();
+    obsLinkOutputEl.value = link;
+    log("Generated OBS browser source link.", "good");
+  });
+}
+
+if (copyObsLinkBtn && obsLinkOutputEl) {
+  copyObsLinkBtn.addEventListener("click", async () => {
+    const link = buildObsBrowserSourceLink();
+    obsLinkOutputEl.value = link;
+
+    try {
+      await navigator.clipboard.writeText(link);
+      log("Copied OBS browser source link to clipboard.", "good");
+    } catch (err) {
+      log("Could not copy OBS link automatically. Copy it from the box instead.", "bad");
+    }
+  });
+}
+
+if (obsParamToggleBtn && obsParamMenu) {
+  obsParamToggleBtn.addEventListener("click", () => {
+    obsParamMenu.classList.toggle("hidden");
+    obsParamToggleBtn.textContent = obsParamMenu.classList.contains("hidden")
+      ? "OBS Link Options ▼"
+      : "OBS Link Options ▲";
+  });
+
+  document.addEventListener("click", (event) => {
+    if (!obsParamMenu.contains(event.target) && !obsParamToggleBtn.contains(event.target)) {
+      obsParamMenu.classList.add("hidden");
+      obsParamToggleBtn.textContent = "OBS Link Options ▼";
+    }
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+loadLastApUrl();
+
+  const viewDescriptions = {
+    "item-alert": "Shows only popup item alerts. No main panel cards.",
+    "log": "Shows just the live log overlay.",
+    "full": "Shows the normal full panel layout.",
+    "compact": "Shows a minimal session overlay without the full item list."
+  };
+
+  const viewSelect = document.getElementById("obsViewSelect");
+  const viewDesc = document.getElementById("viewDescription");
+
+  if (!viewSelect || !viewDesc) return;
+
+  function updateViewDescription() {
+    viewDesc.textContent = viewDescriptions[viewSelect.value] || "";
+  }
+
+  viewSelect.addEventListener("change", updateViewDescription);
+  updateViewDescription();
+});
+
+function applyViewMode() {
+  const view = currentView;
+
+  document.body.classList.remove(
+    "obs-mode",
+    "view-progress",
+    "view-log",
+    "view-compact",
+    "view-item-alert"
+  );
+
+  if (!["progress", "log", "compact", "item-alert"].includes(view)) {
+    return;
+  }
+
+  document.body.classList.add("obs-mode", `view-${view}`);
+
+  // hide everything first
+  connectionCardEl?.classList.add("hidden");
+  logCardEl?.classList.add("hidden");
+  sessionCardEl?.classList.add("hidden");
+  hintsCardEl?.classList.add("hidden");
+
+  document.querySelector(".topbar")?.classList.add("hidden");
+
+  const sessionHeader = sessionStateEl?.parentElement;
+  if (sessionHeader) sessionHeader.classList.remove("hidden");
+
+  itemsEl?.classList.remove("hidden");
+
+  const itemsSection = document.querySelector(".items-section");
+  itemsSection?.classList.remove("hidden");
+
+  if (itemsSection) {
+    const headings = itemsSection.querySelectorAll("h2");
+    headings.forEach((h) => h.classList.remove("hidden"));
+  }
+
+  if (view === "progress") {
+    sessionCardEl?.classList.remove("hidden");
+    if (sessionHeader) sessionHeader.classList.add("hidden");
+    itemsSection?.classList.add("hidden");
+  }
+
+  if (view === "log") {
+    logCardEl?.classList.remove("hidden");
+  }
+
+  if (view === "compact") {
+    sessionCardEl?.classList.remove("hidden");
+    if (sessionHeader) sessionHeader.classList.add("hidden");
+
+    itemsEl?.classList.add("hidden");
+
+    if (itemsSection) {
+      const headings = itemsSection.querySelectorAll("h2");
+      if (headings[1]) headings[1].classList.add("hidden");
+    }
+  }
+
+  if (view === "item-alert") {
+    // toast-only mode, everything else stays hidden
+  }
+}
+
+function getHintKey(hint) {
+  return [
+    hint.finding_player ?? "",
+    hint.location ?? "",
+    hint.receiving_player ?? "",
+    hint.item ?? ""
+  ].join(":");
+}
+
+
+function isHintImportantToYou(hint) {
+  if (!hint || typeof hint !== "object") return false;
+
+  const flags = Number(hint.flags ?? hint.item_flags ?? NaN);
+
+  if (Number.isFinite(flags)) {
+    return (flags & 1) !== 0 || (flags & 2) !== 0;
+  }
+
+  return hint.important === true;
+}
+
+function getHintStatus(hint) {
+  if (hint.found === true) return "found";
+  return "unfound";
+}
+
+function upsertHints(newHints) {
+  if (!Array.isArray(newHints) || !newHints.length) return;
+
+  const byKey = new Map(hintsState.map((hint) => [getHintKey(hint), hint]));
+
+  for (const hint of newHints) {
+    const key = getHintKey(hint);
+    byKey.set(key, { ...(byKey.get(key) || {}), ...hint });
+  }
+
+  hintsState = Array.from(byKey.values());
+  renderHints();
+}
+
+const LAST_AP_URL_KEY = "lastApUrl";
+
+function saveLastApUrl(url) {
+  const normalizedUrl = normalizeApUrl(url);
+
+  if (!normalizedUrl) return;
+
+  localStorage.setItem(LAST_AP_URL_KEY, normalizedUrl);
+}
+
+function loadLastApUrl() {
+  const saved = localStorage.getItem(LAST_AP_URL_KEY);
+
+  if (!saved) return;
+
+  apUrlEl.value = normalizeApUrl(saved);
+}
+
+// REPLACE your current renderHints() with this
+function renderHints() {
+  if (!hintsEl) return;
+
+  hintsEl.innerHTML = "";
+
+  if (!hintsState.length) {
+    hintsEl.innerHTML = '<div class="muted small">No active hints yet.</div>';
+    if (hintsSummaryEl) hintsSummaryEl.textContent = "No hints yet.";
+    return;
+  }
+
+  const myImportantCount = hintsState.filter(isHintImportantToYou).length;
+  const foundCount = hintsState.filter((hint) => getHintStatus(hint) === "found").length;
+  const visibleHints = hideFoundHints
+    ? hintsState.filter((hint) => getHintStatus(hint) !== "found")
+    : hintsState;
+
+  if (hintsSummaryEl) {
+    const hiddenText = hideFoundHints ? ` • showing ${visibleHints.length}` : "";
+    hintsSummaryEl.textContent =
+      `${hintsState.length} hint(s) • ${foundCount} found • ${myImportantCount} important${hiddenText}`;
+  }
+
+  if (!visibleHints.length) {
+    hintsEl.innerHTML = '<div class="muted small">No unfound hints to show.</div>';
+    return;
+  }
+
+  const sortedHints = [...visibleHints].sort((a, b) => {
+    const aFound = getHintStatus(a) === "found" ? 1 : 0;
+    const bFound = getHintStatus(b) === "found" ? 1 : 0;
+    if (aFound !== bFound) return aFound - bFound;
+
+    const aImportant = isHintImportantToYou(a) ? 1 : 0;
+    const bImportant = isHintImportantToYou(b) ? 1 : 0;
+    if (aImportant !== bImportant) return bImportant - aImportant;
+
+    return 0;
+  });
+
+  for (const hint of sortedHints) {
+    const div = document.createElement("div");
+
+    const important = isHintImportantToYou(hint);
+    const status = getHintStatus(hint);
+
+    const locationGameSlot = hint.finding_player ?? connected?.slot;
+    const itemGameSlot = hint.receiving_player ?? connected?.slot;
+
+    const locationName =
+      hint._hint_text_location_name ||
+      lookupLocationName(hint.location, locationGameSlot);
+
+    const itemName =
+      hint._hint_text_item_name ||
+      lookupItemName(hint.item, itemGameSlot);
+
+    const finderName =
+      hint._hint_text_owner_name ||
+      getPlayerName(hint.finding_player) ||
+      `Slot ${hint.finding_player ?? "?"}`;
+
+    const receiverName =
+      hint._hint_text_owner_name ||
+      getPlayerName(hint.receiving_player) ||
+      `Slot ${hint.receiving_player ?? "?"}`;
+
+    const importantBadge = important
+      ? '<span class="hint-badge hint-badge-important">Important</span>'
+      : "";
+
+    div.className = `hint-item hint-${status}${important ? " hint-important" : ""}`;
+
+    div.innerHTML = `
+      <div class="hint-head">
+        <div class="hint-title">${escapeHtml(String(itemName ?? "Unknown item"))}</div>
+        <div class="hint-badges">
+          <span class="hint-badge hint-badge-${status}">
+            ${status === "found" ? "Found" : "Unfound"}
+          </span>
+          ${importantBadge}
+        </div>
+      </div>
+
+      <div class="hint-meta">
+        <div><strong>Location:</strong> ${escapeHtml(String(locationName ?? "Unknown location"))}</div>
+        <div><strong>Found by:</strong> ${escapeHtml(String(finderName))}</div>
+        <div><strong>For:</strong> ${escapeHtml(String(receiverName))}</div>
+        <div class="muted-line">Location ID: ${escapeHtml(String(hint.location ?? "?"))} • Item ID: ${escapeHtml(String(hint.item ?? "?"))}</div>
+      </div>
+    `;
+
+    hintsEl.appendChild(div);
+  }
+}
+
+function applyAutoMode() {
+  if (!isAutoMode) return;
+
+  // Hide full UI panels
+  connectionCardEl?.classList.add("hidden");
+
+  // Hide left column extras
+  document.querySelector(".players-section")?.classList.add("hidden");
+
+  // Optional: hide room + chat blocks
+  document.querySelector("#roomInfo")?.closest("div")?.classList.add("hidden");
+  document.querySelector("#chatInput")?.closest("div")?.classList.add("hidden");
+
+  // Hide OBS link generator UI
+  document.querySelector("#obsLinkOutput")?.closest("div")?.classList.add("hidden");
+
+  // Hide top bar
+  document.querySelector(".topbar")?.classList.add("hidden");
+}
+
+let audioCtx = null;
+let audioDebugEnabled = false;
+
+function audioDebug(message, kind = "small") {
+  if (!audioDebugEnabled) return;
+  log(`[AUDIO] ${message}`, kind);
+}
+
+function getAudioCtx() {
+  audioDebug(`getAudioCtx() called. Existing ctx: ${!!audioCtx}`);
+
+  if (!audioCtx) {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) {
+      audioDebug("AudioContext not supported in this browser.", "bad");
+      return null;
+    }
+
+    audioCtx = new AudioContextClass();
+    audioDebug(`Created AudioContext. Initial state: ${audioCtx.state}`);
+  }
+
+  if (audioCtx.state === "suspended") {
+    audioDebug("AudioContext is suspended. Attempting resume...");
+    audioCtx.resume()
+      .then(() => {
+        audioDebug(`AudioContext resumed successfully. New state: ${audioCtx.state}`, "good");
+      })
+      .catch((err) => {
+        audioDebug(`AudioContext resume failed: ${err?.message || err}`, "bad");
+      });
+  } else {
+    audioDebug(`AudioContext already active. State: ${audioCtx.state}`, "good");
+  }
+
+  return audioCtx;
+}
+
+function playTone({
+  frequency = 440,
+  type = "sine",
+  duration = 0.12,
+  volume = 0.034,
+  delay = 0
+} = {}) {
+  audioDebug(
+    `playTone() requested: freq=${frequency}, type=${type}, duration=${duration}, volume=${volume}, delay=${delay}`
+  );
+
+  const ctx = getAudioCtx();
+  if (!ctx) {
+    audioDebug("playTone() aborted: no audio context.", "bad");
+    return;
+  }
+
+  if (volumeLevel === 0) {
+    audioDebug("playTone() aborted: volumeLevel is 0 (muted).", "bad");
+    return;
+  }
+
+  const finalVolume = volume * volumeLevel;
+  const now = ctx.currentTime + delay;
+
+  audioDebug(
+    `Scheduling tone. ctx.state=${ctx.state}, ctx.currentTime=${ctx.currentTime.toFixed(4)}, now=${now.toFixed(4)}, volumeLevel=${volumeLevel}, finalVolume=${finalVolume.toFixed(5)}`
+  );
+
+  try {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = type;
+    osc.frequency.setValueAtTime(frequency, now);
+
+    gain.gain.setValueAtTime(0.0001, now);
+    gain.gain.exponentialRampToValueAtTime(finalVolume, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.onended = () => {
+      audioDebug(`Tone ended: freq=${frequency}`, "good");
+    };
+
+    osc.start(now);
+    osc.stop(now + duration + 0.02);
+
+    audioDebug(`Tone started/scheduled successfully: freq=${frequency}`, "good");
+  } catch (err) {
+    audioDebug(`playTone() error: ${err?.message || err}`, "bad");
+  }
+}
+
+function playConnectChime() {
+  audioDebug("playConnectChime() called", "good");
+  playTone({ frequency: 523.25, type: "sine", duration: 0.14, volume: 0.03, delay: 0.00 });
+  playTone({ frequency: 659.25, type: "sine", duration: 0.16, volume: 0.028, delay: 0.08 });
+  playTone({ frequency: 783.99, type: "sine", duration: 0.20, volume: 0.025, delay: 0.16 });
+}
+
+
+
+function playItemPing() {
+  playTone({ frequency: 880, type: "sine", duration: 0.10, volume: 0.025, delay: 0.00 });
+  playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.05 });
+}
+
+
+    function log(message, kind = "") {
+      const line = document.createElement("div");
+      if (kind) line.className = kind;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logEl.appendChild(line);
+      logEl.scrollTop = logEl.scrollHeight;
+    }
+
+function setStatus(text, state = "") {
+  statusEl.textContent = text;
+  statusEl.className = "status";
+  if (state) statusEl.classList.add(state);
+}
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+function renderLatestItem(item = null) {
+  if (!latestItemEl) return;
+
+  if (!item) {
+    latestItemEl.className = "latest-item muted small";
+    latestItemEl.innerHTML = "No items yet.";
+    return;
+  }
+
+  const itemLookupSlot = connected?.slot;
+  const locationLookupSlot =
+    item.player === 0 || item.player == null ? connected?.slot : item.player;
+
+  const itemName = lookupItemName(item.item, itemLookupSlot);
+
+  let sourceLine = "";
+  if (item.location === -2 && item.player === 0) {
+    sourceLine = `<div class="muted">Source: Start inventory / precollected</div>`;
+  } else {
+    const locationName = lookupLocationName(item.location, locationLookupSlot);
+    sourceLine = `<div class="muted">Location: ${escapeHtml(locationName)} [${item.location ?? "?"}]</div>`;
+  }
+
+  let fromLine = "";
+  if (item.player === 0) {
+    fromLine = `<div class="muted">From: System</div>`;
+  } else {
+    const playerName = getPlayerName(item.player);
+    fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
+  }
+
+  latestItemEl.className = "latest-item small";
+  latestItemEl.innerHTML = `
+    <div><strong>${escapeHtml(itemName)}</strong> <span class="muted">[${item.item ?? "?"}]</span></div>
+    ${sourceLine}
+    ${fromLine}
+  `;
+}
+
+function flashLatestItem() {
+  if (!latestItemEl) return;
+
+  latestItemEl.classList.remove("latest-item-flash");
+
+  // restart animation cleanly
+  void latestItemEl.offsetWidth;
+
+  latestItemEl.classList.add("latest-item-flash");
+}
+
+function setSessionCookie(name, value) {
+  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+}
+
+function getCookie(name) {
+  const target = `${encodeURIComponent(name)}=`;
+  const parts = document.cookie.split(";");
+
+  for (const part of parts) {
+    const trimmed = part.trim();
+    if (trimmed.startsWith(target)) {
+      return decodeURIComponent(trimmed.slice(target.length));
+    }
+  }
+
+  return "";
+}
+
+function clearCookie(name) {
+  document.cookie = `${encodeURIComponent(name)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+}
+
+function generateUuid() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === "x" ? r : (r & 0x3) | 0x8;
+    return v.toString(16);
+  });
+}
+
+function saveUuidToSessionCookie() {
+  if (!currentUuid) {
+    clearCookie(UUID_COOKIE_NAME);
+    return;
+  }
+
+  setSessionCookie(UUID_COOKIE_NAME, currentUuid);
+}
+
+function loadOrCreateUuid() {
+  let uuid = getCookie(UUID_COOKIE_NAME);
+
+  if (!uuid) {
+    uuid = generateUuid();
+    setSessionCookie(UUID_COOKIE_NAME, uuid);
+    log(`Generated UUID for session: ${uuid}`, "good");
+  } else {
+    log(`Loaded UUID from session: ${uuid}`, "good");
+  }
+
+  currentUuid = uuid;
+}
+
+function rebuildPlayerGameMap() {
+  playerGameMap = new Map();
+
+  const players = getPlayersList();
+  for (const p of players) {
+    if (p && p.slot != null && p.game) {
+      playerGameMap.set(Number(p.slot), p.game);
+    }
+  }
+}
+
+function getOwnGame() {
+  return (
+    gameNameEl.value.trim() ||
+    connected?.slot_info?.[connected?.slot]?.game ||
+    playerGameMap.get(Number(connected?.slot)) ||
+    null
+  );
+}
+
+
+function getGameForPlayerSlot(slot) {
+  const numericSlot = Number(slot);
+
+  if (Number.isFinite(numericSlot) && playerGameMap.has(numericSlot)) {
+    return playerGameMap.get(numericSlot);
+  }
+
+  if (connected?.slot_info?.[numericSlot]?.game) {
+    return connected.slot_info[numericSlot].game;
+  }
+
+  // precollected/system items and "your own" checks often need this fallback
+  return getOwnGame();
+}
+
+function getPlayerName(slot) {
+  const numericSlot = Number(slot);
+
+  const players = getPlayersList();
+  const player = players.find((p) => Number(p.slot) === numericSlot);
+
+  return player?.alias || player?.name || `Player ${numericSlot}`;
+}
+
+function lookupItemName(itemId, playerSlot) {
+  const game = getGameForPlayerSlot(playerSlot);
+  if (!game) return `Item ${itemId}`;
+
+  const gameData = dataPackage?.games?.[game];
+  const itemIdToName = gameData?.item_name_to_id
+    ? Object.fromEntries(
+        Object.entries(gameData.item_name_to_id).map(([name, id]) => [String(id), name])
+      )
+    : {};
+
+  return itemIdToName[String(itemId)] || `Item ${itemId}`;
+}
+
+function lookupLocationName(locationId, playerSlot) {
+  const game = getGameForPlayerSlot(playerSlot);
+  if (!game) return `Location ${locationId}`;
+
+  const gameData = dataPackage?.games?.[game];
+  const locationIdToName = gameData?.location_name_to_id
+    ? Object.fromEntries(
+        Object.entries(gameData.location_name_to_id).map(([name, id]) => [String(id), name])
+      )
+    : {};
+
+  return locationIdToName[String(locationId)] || `Location ${locationId}`;
+}
+
+function formatPrintJson(parts) {
+  if (!Array.isArray(parts)) return String(parts ?? "");
+
+  return parts.map((part) => {
+    if (!part || typeof part !== "object") {
+      return String(part ?? "");
+    }
+
+    if (part.type === "item_id") {
+      const itemId = Number(part.text);
+      const playerSlot =
+        part.player === 0 || part.player == null ? connected?.slot : part.player;
+
+      return `${lookupItemName(itemId, playerSlot)} [${itemId}]`;
+    }
+
+    if (part.type === "location_id") {
+      const locationId = Number(part.text);
+      const playerSlot = part.player === 0 || part.player == null ? connected?.slot : part.player;
+
+      return `${lookupLocationName(locationId, playerSlot)} [${locationId}]`;
+    }
+
+    if (part.type === "player_id") {
+      const slot = Number(part.text);
+      const players = connected?.players || roomInfo?.players || [];
+      const player = players.find((p) => Number(p.slot) === slot);
+      return player?.alias || player?.name || `Player ${slot}`;
+    }
+
+    return part.text ?? "";
+  }).join("");
+}
+
+function isObsConnection() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get("auto") === "1";
+}
+
+function sendConnectPacket() {
+  if (!currentUuid) {
+    loadOrCreateUuid();
+  }
+
+  getAudioCtx();
+  playConnectChime();
+
+  manualDisconnect = false;
+  shouldAutoReconnect = true;
+  clearReconnectTimer();
+
+  const payload = [
+    {
+      cmd: "Connect",
+      game: String(gameNameEl.value || "").trim(),
+      name: slotNameEl.value.trim(),
+      password: passwordEl.value,
+      uuid: currentUuid,
+      version: { major: 0, minor: 6, build: 0, class: "Version" },
+      items_handling: 7,
+      tags: ["Tracker"]
+    }
+  ];
+
+  if (connected) {
+    log("Already authenticated. Reconnecting before switching game/slot...", "bad");
+    pendingConnectPayload = payload;
+    resetSessionState();
+    updateProgressDisplay();
+
+    sendBrowserMessage({ type: "disconnect-ap" });
+
+    setTimeout(() => {
+      const normalizedUrl = normalizeApUrl(apUrlEl.value);
+      apUrlEl.value = normalizedUrl;
+      sendBrowserMessage({
+        type: "connect-ap",
+        apUrl: normalizedUrl
+      });
+    }, 250);
+
+    return;
+  }
+
+  pendingConnectPayload = payload;
+
+  log(`Sending Connect packet with session UUID ${currentUuid}`, "good");
+  log(`Using UUID: ${currentUuid}`, "good");
+  sendAp(payload);
+}
+
+document.getElementById("loginBtn").addEventListener("click", sendConnectPacket);
+
+function autoLoginIfReady() {
+  const slot = slotNameEl.value.trim();
+  const game = gameNameEl.value.trim();
+
+  if (!slot || !game) {
+    log("Auto-connect skipped: missing slot or game.", "bad");
+    return;
+  }
+
+  pendingConnectPayload = buildConnectPacket();
+
+  log("Prepared Connect packet for auto-login.", "good");
+}
+    function ensureBrowserSocket() {
+      if (browserSocket && browserSocket.readyState === WebSocket.OPEN) return;
+
+      const proto = location.protocol === "https:" ? "wss:" : "ws:";
+      browserSocket = new WebSocket(`${proto}//${location.host}/ws`);
+
+browserSocket.addEventListener("open", () => {
+  log("Browser connected to local proxy.", "good");
+
+  const shouldAuto = applyUrlParams();
+
+if (shouldAuto) {
+  autoLoginIfReady();
+
+  setStatus("Connecting...", "connecting");
+
+  sendBrowserMessage({
+    type: "connect-ap",
+    apUrl: apUrlEl.value
+  });
+
+  log("Auto-connecting via URL params...", "good");
+}
+});
+
+volumeSlider.addEventListener("input", () => {
+  volumeLevel = parseFloat(volumeSlider.value);
+  localStorage.setItem("volume", volumeLevel);
+  volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+});
+
+browserSocket.addEventListener("close", (event) => {
+  clearReconnectTimer();
+  log(`Browser proxy socket closed. Code: ${event.code} Reason: ${event.reason || "none"}`, "bad");
+  setStatus("Disconnected", "bad");
+});
+
+browserSocket.addEventListener("error", () => {
+  setStatus("Proxy socket error", "bad");
+  log("Browser proxy socket error.", "bad");
+});
+
+      browserSocket.addEventListener("message", (event) => {
+        const msg = JSON.parse(event.data);
+
+if (msg.type === "ap-open") {
+  audioDebug("Received ap-open event. Auto-mode/server-open chime path firing.", "good");
+
+  clearReconnectTimer();
+  reconnectAttempts = 0;
+  manualDisconnect = false;
+  hasEverConnected = true;
+
+  setStatus(`Connected to ${shortUrl(msg.apUrl)}`, "good");
+  log(`Connected to Archipelago socket: ${msg.apUrl}`, "good");
+  playConnectChime();
+
+  sendAp([{ cmd: "GetDataPackage" }]);
+  log("Requested DataPackage.", "good");
+
+  if (pendingConnectPayload) {
+    sendAp(pendingConnectPayload);
+    log("Sent pending Connect packet after reconnect.", "good");
+  } else if (isObsConnection()) {
+    log("OBS connection detected. Triggering Send Connect Packet.", "good");
+    document.getElementById("loginBtn").click();
+  }
+
+  return;
+}
+
+if (msg.type === "ap-close") {
+  setStatus("Disconnected", "bad");
+  log("Disconnected from Archipelago server.", "bad");
+
+  if (!manualDisconnect && shouldAutoReconnect && hasEverConnected) {
+    scheduleReconnect();
+  } else {
+    log("Reconnect skipped.", "bad");
+  }
+
+  return;
+}
+
+if (msg.type === "error") {
+  setStatus("Connection error", "bad");
+  log(msg.message, "bad");
+  return;
+}
+
+        if (msg.type === "ap-message") {
+          handleApPackets(msg.packets, msg.raw);
+        }
+      });
+    }
+
+function shortUrl(url) {
+  try {
+    const u = new URL(url);
+    return `${u.hostname}${u.port ? ":" + u.port : ""}`;
+  } catch {
+    return url;
+  }
+}
+
+function setHints(newHints) {
+  hintsState = Array.isArray(newHints) ? [...newHints] : [];
+  renderHints();
+}
+
+function resetSessionState() {
+  roomInfo = null;
+  connected = null;
+  receivedItems = [];
+  dataPackage = {};
+  playerGameMap = new Map();
+
+  hintsState = [];
+  lastHintIds = new Set();
+
+  renderRoom();
+  renderPlayers();
+  renderSession();
+  renderItems();
+  renderLatestItem();
+  renderHints();
+  updateProgressDisplay();
+}
+
+    function sendBrowserMessage(payload) {
+      ensureBrowserSocket();
+
+      const sendNow = () => {
+        browserSocket.send(JSON.stringify(payload));
+      };
+
+      if (browserSocket.readyState === WebSocket.OPEN) {
+        sendNow();
+      } else {
+        browserSocket.addEventListener("open", sendNow, { once: true });
+      }
+    }
+
+    function sendAp(payload) {
+      sendBrowserMessage({ type: "send-ap", payload });
+    }
+
+function populateGameDropdown() {
+  if (!gameNameEl) return;
+
+  const previousValue = gameNameEl.value;
+  const games = Array.isArray(roomInfo?.games)
+    ? roomInfo.games.filter((game) => game !== "Archipelago")
+    : [];
+
+  gameNameEl.innerHTML = "";
+
+  const placeholder = document.createElement("option");
+  placeholder.value = "";
+  placeholder.textContent = games.length ? "Select a game..." : "Connect to load games...";
+  gameNameEl.appendChild(placeholder);
+
+  for (const game of games) {
+    const option = document.createElement("option");
+    option.value = game;
+    option.textContent = game;
+    gameNameEl.appendChild(option);
+  }
+
+  if (previousValue && games.includes(previousValue)) {
+    gameNameEl.value = previousValue;
+  } else if (games.length === 1) {
+    gameNameEl.value = games[0];
+  }
+}
+
+    function renderRoom() {
+      if (!roomInfo) {
+        roomInfoEl.textContent = "No room data yet.";
+        return;
+      }
+
+      const version = roomInfo.version
+        ? `${roomInfo.version.major ?? "?"}.${roomInfo.version.minor ?? "?"}.${roomInfo.version.build ?? "?"}`
+        : "Unknown";
+
+      const generatorVersion = roomInfo.generator_version
+        ? `${roomInfo.generator_version.major ?? "?"}.${roomInfo.generator_version.minor ?? "?"}.${roomInfo.generator_version.build ?? "?"}`
+        : "Unknown";
+
+      const tags = Array.isArray(roomInfo.tags) && roomInfo.tags.length
+        ? roomInfo.tags.join(", ")
+        : "None";
+
+      roomInfoEl.innerHTML = `
+        <div><strong>Seed:</strong> ${escapeHtml(roomInfo.seed_name || roomInfo.seed || "Unknown")}</div>
+        <div><strong>Protocol version:</strong> ${escapeHtml(version)}</div>
+        <div><strong>Generator version:</strong> ${escapeHtml(generatorVersion)}</div>
+        <div><strong>Password required:</strong> ${roomInfo.password ? "Yes" : "No"}</div>
+        <div><strong>Hint cost:</strong> ${roomInfo.hint_cost ?? "?"}</div>
+        <div><strong>Location check points:</strong> ${roomInfo.location_check_points ?? "?"}</div>
+        <div><strong>Tags:</strong> ${escapeHtml(tags)}</div>
+      `;
+    }
+
+function getPlayersList() {
+  if (Array.isArray(connected?.players) && connected.players.length) {
+    return connected.players;
+  }
+
+  if (Array.isArray(roomInfo?.players) && roomInfo.players.length) {
+    return roomInfo.players;
+  }
+
+  if (Array.isArray(roomInfo?.network_players) && roomInfo.network_players.length) {
+    return roomInfo.network_players;
+  }
+
+  if (connected?.slot_info && typeof connected.slot_info === "object") {
+    return Object.entries(connected.slot_info).map(([slot, info]) => ({
+      slot: Number(slot),
+      name: info?.name || `Slot ${slot}`,
+      alias: info?.alias || info?.name || `Slot ${slot}`,
+      game: info?.game || "",
+      team: info?.team ?? "?"
+    }));
+  }
+
+  return [];
+}
+
+function renderPlayers() {
+  const players = getPlayersList();
+  playersEl.innerHTML = "";
+
+  if (!players.length) {
+    playersEl.innerHTML = `
+      <div class="muted small players-placeholder">
+      Player list will appear after Send Connect Packet succeeds.
+      </div>
+    `;
+    return;
+  }
+
+  for (const p of players) {
+    const div = document.createElement("div");
+    div.className = "item small";
+    div.innerHTML = `
+      <div><strong>${escapeHtml(p.alias || p.name || `Slot ${p.slot}`)}</strong></div>
+      <div class="muted">Team: ${p.team ?? "?"} · Slot: ${p.slot ?? "?"}${p.game ? ` · ${escapeHtml(p.game)}` : ""}</div>
+    `;
+    playersEl.appendChild(div);
+  }
+}
+
+function renderSession() {
+  if (!connected) {
+    sessionStateEl.innerHTML = "Not authenticated. <br/> Please fill in Slot name and Game name then press send connect packet";
+    return;
+  }
+
+  const checked = (connected.checked_locations || []).length;
+  const missing = (connected.missing_locations || []).length;
+  const total = checked + missing;
+
+  const percent = total > 0
+    ? ((checked / total) * 100).toFixed(1)
+    : 0;
+
+  const precollectedCount = receivedItems.filter(
+    (item) => item.location === -2 && item.player === 0
+  ).length;
+
+  const liveReceivedCount = receivedItems.length - precollectedCount;
+
+  sessionStateEl.innerHTML = `
+    <div><strong>Team:</strong> ${connected.team}</div>
+    <div><strong>Slot:</strong> ${connected.slot}</div>
+
+    <div><strong>Checked locations:</strong> ${checked}</div>
+    <div><strong>Missing locations:</strong> ${missing}</div>
+
+    <div>
+      <strong>Progress:</strong> ${percent}% 
+      <span class="muted small">(${checked}/${total})</span>
+    </div>
+	<div class="progress-bar">
+  <div class="progress-fill" style="width: ${percent}%"></div>
+</div>
+
+    <div><strong>Precollected items:</strong> ${precollectedCount}</div>
+    <div><strong>Other received items:</strong> ${liveReceivedCount}</div>
+  `;
+}
+
+function renderItems() {
+  itemsEl.innerHTML = "";
+
+  if (!receivedItems.length) {
+    itemsEl.innerHTML = '<div class="muted small">No received items yet.</div>';
+    return;
+  }
+
+  for (const item of receivedItems) {
+    const div = document.createElement("div");
+    div.className = "item small";
+
+    // Item names should resolve in YOUR game
+    const itemLookupSlot = connected?.slot;
+
+    // Location names should resolve in the SENDER'S game
+    const locationLookupSlot =
+      item.player === 0 || item.player == null ? connected?.slot : item.player;
+
+    const itemName = lookupItemName(item.item, itemLookupSlot);
+
+    let sourceLine = "";
+    if (item.location === -2 && item.player === 0) {
+      sourceLine = `<div class="muted">Source: Start inventory / precollected</div>`;
+    } else {
+      const locationName = lookupLocationName(item.location, locationLookupSlot);
+      sourceLine = `<div class="muted">Location: ${escapeHtml(locationName)} [${item.location ?? "?"}]</div>`;
+    }
+
+    let fromLine = "";
+if (item.player === 0) {
+  fromLine = `<div class="muted">From: System</div>`;
+} else {
+  const playerName = getPlayerName(item.player);
+  fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
+}
+
+    div.innerHTML = `
+      <div><strong>${escapeHtml(itemName)}</strong> <span class="muted">[${item.item ?? "?"}]</span></div>
+      ${sourceLine}
+      ${fromLine}
+    `;
+
+    itemsEl.appendChild(div);
+  }
+}
+
+function extractHintFromPrintJson(data) {
+  if (!Array.isArray(data) || !data.length) return null;
+
+  const text = data
+    .map((part) => {
+      if (typeof part?.text === "string") return part.text;
+      return "";
+    })
+    .join("");
+
+  if (!text.startsWith("[Hint]:")) return null;
+
+  // Example:
+  // [Hint]: IssyWind's Progressive Bow [2322489] is at Forsaken Fortress - Phantom Ganon [2326642] in IssyWind's World. (found)
+  // [Hint]: IssyWind's Progressive Bow [2322489] is at Tower of the Gods - Big Key Chest [2326639] in IssyWind's World at Tower of the Gods Sector. (priority)
+
+  const itemMatch = text.match(/\[Hint\]:\s(.+?)\s\[(\d+)\]\sis at\s(.+?)\s\[(\d+)\]\sin\s(.+?)'s World/i);
+  if (!itemMatch) return null;
+
+  const [, rawItemName, rawItemId, rawLocationName, rawLocationId, rawOwnerName] = itemMatch;
+
+  const lower = text.toLowerCase();
+
+  let found = false;
+  if (lower.includes("(found)")) found = true;
+
+  const important = lower.includes("(priority)");
+
+  // Try to resolve owner slot from player list
+  let receivingPlayer = null;
+  if (Array.isArray(roomInfo?.players)) {
+    const owner = roomInfo.players.find((p) => p?.alias === rawOwnerName || p?.name === rawOwnerName);
+    if (owner) receivingPlayer = owner.slot;
+  }
+
+  // fallback: if the owner name is us, use our slot
+  if (receivingPlayer == null && connected?.slot != null) {
+    const myName = slotNameEl?.value?.trim();
+    if (rawOwnerName === myName) {
+      receivingPlayer = connected.slot;
+    }
+  }
+
+  return {
+    item: Number(rawItemId),
+    location: Number(rawLocationId),
+    receiving_player: receivingPlayer,
+    finding_player: receivingPlayer,
+    found,
+    important,
+    _hint_text_item_name: rawItemName,
+    _hint_text_location_name: rawLocationName,
+    _hint_text_owner_name: rawOwnerName
+  };
+}
+
+  function handleApPackets(packets, raw) {
+    if (!packets) {
+      log(`Raw: ${raw}`);
+      return;
+    }
+
+    if (!Array.isArray(packets)) {
+      packets = [packets];
+    }
+
+    for (const packet of packets) {
+const cmd = packet.cmd || "Unknown";
+
+if (cmd === "Bounced" && !showBounced) {
+  return; // completely hide bounced packets
+}
+
+log(`Packet: ${cmd}`);
+
+if (cmd === "RoomInfo") {
+  roomInfo = packet;
+  populateGameDropdown();
+  rebuildPlayerGameMap();
+  renderRoom();
+  renderPlayers();
+  log(`RoomInfo fields: ${Object.keys(packet).join(", ")}`, "good");
+  log("RoomInfo received ✔", "good");
+}
+
+if (cmd === "Connected") {
+  connected = packet;
+  rebuildPlayerGameMap();
+  renderPlayers();
+  renderSession();
+  updateProgressDisplay();
+  renderHints();
+  log(`Connected fields: ${Object.keys(packet).join(", ")}`, "good");
+  log(`Authenticated as slot ${packet.slot} on team ${packet.team}.`, "good");
+
+const hintKey = `_read_hints_${packet.team}_${packet.slot}`;
+
+log(`Requesting stored hints from server using key: ${hintKey}`, "good");
+
+sendBrowserMessage({
+  type: "send-ap",
+  payload: [
+    {
+      cmd: "Get",
+      keys: [hintKey]
+    },
+    {
+      cmd: "SetNotify",
+      keys: [hintKey]
+    }
+  ]
+});
+
+
+}
+
+if (cmd === "Retrieved") {
+  const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
+
+  if (
+    hintKey &&
+    packet.keys &&
+    Object.prototype.hasOwnProperty.call(packet.keys, hintKey)
+  ) {
+    const hints = Array.isArray(packet.keys[hintKey])
+      ? packet.keys[hintKey]
+      : [];
+
+    setHints(hints);
+    log(`Retrieved ${hints.length} hint(s).`, "good");
+  }
+}
+
+if (cmd === "SetReply") {
+  log(`SetReply packet: ${JSON.stringify(packet)}`);
+
+  const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
+
+  if (hintKey && packet.key === hintKey) {
+    const hints = Array.isArray(packet.value)
+      ? packet.value
+      : [];
+
+    setHints(hints);
+    log(`Hint list updated (${hints.length} hint(s)).`, "good");
+  }
+}
+
+if (cmd === "Bounced") {
+  if (!showBounced) return;
+
+  log(`Bounced: ${JSON.stringify(packet.data ?? {})}`);
+}
+
+      if (cmd === "DataPackage") {
+        dataPackage = packet.data || {};
+        log(`DataPackage received. Games loaded: ${Object.keys(dataPackage.games || {}).length}`, "good");
+      }
+
+      if (cmd === "ConnectionRefused") {
+        log(`Connection refused: ${(packet.errors || []).join(", ") || "Unknown reason"}`, "bad");
+      }
+
+if (cmd === "ReceivedItems") {
+  const newItems = Array.isArray(packet.items) ? packet.items : [];
+
+  for (const item of newItems) {
+    receivedItems.push(item);
+    renderLatestItem(item);
+    flashLatestItem();
+    showObsItemToast(item);
+  }
+
+  renderItems();
+  renderSession();
+  updateProgressDisplay();
+  log(`Received ${newItems.length} item(s).`, "good");
+}
+
+      if (cmd === "Print") {
+        log(packet.text || "[Print packet]");
+      }
+
+if (cmd === "PrintJSON") {
+  const rendered = formatPrintJson(packet.data || []);
+  log(rendered || JSON.stringify(packet.data || packet, null, 2));
+
+  const parsedHint = extractHintFromPrintJson(packet.data || []);
+  if (parsedHint) {
+    setHints([parsedHint]);
+    log("Hint added to hints panel from PrintJSON.", "good");
+  }
+}
+
+if (cmd === "RoomUpdate") {
+  const next = { ...(connected || {}), ...packet };
+
+  if (Array.isArray(packet.checked_locations)) {
+    const prevChecked = Array.isArray(connected?.checked_locations)
+      ? connected.checked_locations
+      : [];
+
+    next.checked_locations = [...new Set([...prevChecked, ...packet.checked_locations])];
+  }
+
+  if (!Array.isArray(packet.missing_locations) && Array.isArray(connected?.missing_locations)) {
+    next.missing_locations = connected.missing_locations;
+  }
+
+  connected = next;
+  rebuildPlayerGameMap();
+  renderPlayers();
+  renderSession();
+  updateProgressDisplay();
+}
+
+      if (cmd === "InvalidPacket") {
+        log(`Invalid packet (${packet.type} / ${packet.original_cmd}): ${packet.text}`, "bad");
+      }
+    }
+  }
+
+function getItemClassification(item) {
+  const flags = Number(item?.flags ?? 0);
+
+  if (flags & 4) {
+    return { key: "trap", label: "Trap" };
+  }
+
+  if (flags & 1) {
+    return { key: "progression", label: "Progression" };
+  }
+
+  if (flags & 2) {
+    return { key: "useful", label: "Useful" };
+  }
+
+  return { key: "filler", label: "Filler" };
+}
+
+function getPlayerNameBySlot(slot) {
+  if (slot === 0) return "System";
+  return getPlayerName(slot) || `Slot ${slot ?? "?"}`;
+}
+
+function playToastSound(classificationKey) {
+
+  if (classificationKey === "trap") {
+    playTone({ frequency: 240, type: "sawtooth", duration: 0.12, volume: 0.028, delay: 0.00 });
+    playTone({ frequency: 180, type: "triangle", duration: 0.18, volume: 0.018, delay: 0.05 });
+    return;
+  }
+
+  if (classificationKey === "progression") {
+    playTone({ frequency: 987.77, type: "sine", duration: 0.10, volume: 0.028, delay: 0.00 });
+    playTone({ frequency: 1318.51, type: "sine", duration: 0.12, volume: 0.022, delay: 0.05 });
+    playTone({ frequency: 1567.98, type: "sine", duration: 0.14, volume: 0.018, delay: 0.10 });
+    return;
+  }
+
+  if (classificationKey === "useful") {
+    playTone({ frequency: 880, type: "sine", duration: 0.09, volume: 0.024, delay: 0.00 });
+    playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.04 });
+    return;
+  }
+
+  playItemPing();
+}
+
+function showObsItemToast(item) {
+  if (!isAutoMode || !obsToastLayerEl) return;
+  if (currentView !== "item-alert") return;
+  if (item.location === -2 && item.player === 0) return;
+
+  const classification = getItemClassification(item);
+
+  const itemLookupSlot = connected?.slot;
+  const itemName = lookupItemName(item.item, itemLookupSlot);
+
+  const senderName = getPlayerNameBySlot(item.player);
+  const receiverName = getPlayerNameBySlot(connected?.slot);
+
+  const toast = document.createElement("div");
+  toast.className = `obs-toast obs-toast-${classification.key}`;
+
+  toast.innerHTML = `
+    <div class="obs-toast-header">
+      <div class="obs-toast-title">${escapeHtml(itemName)}</div>
+      <div class="obs-toast-badge">${escapeHtml(classification.label)}</div>
+    </div>
+    <div class="obs-toast-meta">
+      <div><strong>From:</strong> ${escapeHtml(senderName)}</div>
+      <div><strong>To:</strong> ${escapeHtml(receiverName)}</div>
+      <div class="muted-line">Item ID: ${escapeHtml(item.item ?? "?")}</div>
+    </div>
+  `;
+
+  obsToastLayerEl.appendChild(toast);
+  playToastSound(classification.key);
+
+  const removeToast = () => {
+    toast.classList.add("hide");
+    setTimeout(() => {
+      toast.remove();
+    }, 220);
+  };
+
+  setTimeout(removeToast, 3800);
+}
+
+function updateProgressDisplay() {
+  if (!progressFillEl || !progressTextEl) return;
+  if (!connected) return;
+
+  const checked = Number(connected?.checked_locations?.length || 0);
+  const total = Number(connected?.missing_locations?.length || 0) + checked;
+  const percent = total > 0 ? (checked / total) * 100 : 0;
+
+  progressTextEl.textContent = `${checked} / ${total} checks`;
+
+  // update bar
+  progressFillEl.style.width = `${percent.toFixed(1)}%`;
+
+  // 👇 ADD THIS BLOCK HERE
+  progressFillEl.classList.remove("bump");
+  void progressFillEl.offsetWidth;
+  progressFillEl.classList.add("bump");
+
+  setTimeout(() => {
+    progressFillEl.classList.remove("bump");
+  }, 220);
+}
+
+function normalizeApUrl(url) {
+  url = String(url || "").trim();
+
+  // If no protocol at all → default to wss://
+  if (!/^wss?:\/\//i.test(url)) {
+    url = "wss://" + url;
+  }
+
+  // If user typed ws://archipelago.gg → upgrade to wss://
+  if (/^ws:\/\/archipelago\.gg(?::\d+)?$/i.test(url)) {
+    url = url.replace(/^ws:\/\//i, "wss://");
+  }
+
+  return url;
+}
+
+document.getElementById("connectBtn").addEventListener("click", () => {
+  audioDebug("Connect button clicked", "good");
+  getAudioCtx();
+  playConnectChime();
+
+  clearReconnectTimer();
+  manualDisconnect = false;
+  shouldAutoReconnect = true;
+  reconnectAttempts = 0;
+  hasEverConnected = false;
+
+  const normalizedUrl = normalizeApUrl(apUrlEl.value);
+  apUrlEl.value = normalizedUrl;
+
+  saveLastApUrl(normalizedUrl);
+
+  setStatus(`Connecting to ${shortUrl(normalizedUrl)}...`, "connecting");
+  log(`Connecting to Archipelago socket: ${normalizedUrl}`, "good");
+
+  sendBrowserMessage({
+    type: "connect-ap",
+    apUrl: normalizedUrl
+  });
+});
+
+function sendConnectPacket() {
+  audioDebug("Send Connect Packet clicked", "good");
+
+  if (!currentUuid) {
+    audioDebug("No UUID found. Creating/loading UUID...");
+    loadOrCreateUuid();
+  }
+
+  getAudioCtx();
+  playConnectChime();
+
+  manualDisconnect = false;
+  shouldAutoReconnect = true;
+  clearReconnectTimer();
+
+  const payload = [
+    {
+      cmd: "Connect",
+      game: String(gameNameEl.value || "").trim(),
+      name: slotNameEl.value.trim(),
+      password: passwordEl.value,
+      uuid: currentUuid,
+      version: { major: 0, minor: 6, build: 0, class: "Version" },
+      items_handling: 7,
+      tags: ["Tracker"]
+    }
+  ];
+
+  audioDebug(`Connect packet prepared for slot="${slotNameEl.value.trim()}" game="${String(gameNameEl.value || "").trim()}"`);
+
+  if (connected) {
+    audioDebug("Already authenticated. Reconnect flow triggered.", "bad");
+
+    log("Already authenticated. Reconnecting before switching game/slot...", "bad");
+    pendingConnectPayload = payload;
+    resetSessionState();
+    updateProgressDisplay();
+
+    sendBrowserMessage({ type: "disconnect-ap" });
+
+    setTimeout(() => {
+      const normalizedUrl = normalizeApUrl(apUrlEl.value);
+      apUrlEl.value = normalizedUrl;
+      sendBrowserMessage({
+        type: "connect-ap",
+        apUrl: normalizedUrl
+      });
+    }, 250);
+
+    return;
+  }
+
+  pendingConnectPayload = payload;
+
+  log(`Sending Connect packet with session UUID ${currentUuid}`, "good");
+  log(`Using UUID: ${currentUuid}`, "good");
+  audioDebug("Calling sendAp() with Connect packet", "good");
+  sendAp(payload);
+}
+
+document.getElementById("loginBtn").addEventListener("click", sendConnectPacket);
+
+
+document.getElementById("disconnectBtn").addEventListener("click", () => {
+  manualDisconnect = true;
+  shouldAutoReconnect = false;
+  reconnectAttempts = 0;
+  hasEverConnected = false;
+  clearReconnectTimer();
+
+  pendingConnectPayload = null;
+
+  setStatus("Disconnecting...", "connecting");
+  log("Manual disconnect requested. Auto-reconnect disabled.", "bad");
+
+  sendBrowserMessage({
+    type: "disconnect-ap"
+  });
+});
+
+
+
+    document.getElementById("syncBtn").addEventListener("click", () => {
+      sendAp([{ cmd: "Sync" }]);
+    });
+
+    document.getElementById("sendChatBtn").addEventListener("click", () => {
+      const text = chatInputEl.value.trim();
+      if (!text) return;
+
+      sendAp([{ cmd: "Say", text }]);
+      chatInputEl.value = "";
+    });
+
+	
+loadOrCreateUuid();
+ensureBrowserSocket();
+renderRoom();
+renderPlayers();
+renderSession();
+renderItems();
+renderLatestItem();
+applyViewMode();
+applyAutoMode();
+
+window.addEventListener("DOMContentLoaded", () => {
+  applyAutoMode();
+});
+
+// unlock audio on first user interaction
+document.addEventListener("click", () => {
+  getAudioCtx();
+}, { once: true });
+	
+  </script>
+</body>
+</html>
