@@ -3540,9 +3540,12 @@ function setupCollapsibles() {
     if (!header || !key) continue;
 
     const storageKey = `collapsed:${key}`;
-    const savedCollapsed = localStorage.getItem(storageKey) === "true";
 
-    if (savedCollapsed) {
+    // ✅ Default = collapsed, unless user has saved preference
+    const stored = localStorage.getItem(storageKey);
+    const isCollapsed = stored === null ? true : stored === "true";
+
+    if (isCollapsed) {
       section.classList.add("collapsed");
     }
 
@@ -3551,21 +3554,30 @@ function setupCollapsibles() {
     function syncCollapsedCardState() {
       if (!parentCard) return;
 
-      if (section.classList.contains("collapsed")) {
+      // ✅ Only collapse the card if ALL sections inside it are collapsed
+      const allSections = parentCard.querySelectorAll(".collapsible-section");
+      const allCollapsed = Array.from(allSections).every(s =>
+        s.classList.contains("collapsed")
+      );
+
+      if (allCollapsed) {
         parentCard.classList.add("collapsed-card");
       } else {
         parentCard.classList.remove("collapsed-card");
       }
     }
 
+    // Initial sync
     syncCollapsedCardState();
 
     header.addEventListener("click", () => {
       section.classList.toggle("collapsed");
+
       localStorage.setItem(
         storageKey,
         String(section.classList.contains("collapsed"))
       );
+
       syncCollapsedCardState();
     });
   }
