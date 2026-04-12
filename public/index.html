@@ -1419,1258 +1419,1296 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
 <div id="obsToastLayer" class="obs-toast-layer" aria-live="polite" aria-atomic="false"></div>
 
-  <script>
-    const statusEl = document.getElementById("status");
-    const logEl = document.getElementById("log");
-    const roomInfoEl = document.getElementById("roomInfo");
-    const playersEl = document.getElementById("players");
-    const sessionStateEl = document.getElementById("sessionState");
-    const itemsEl = document.getElementById("items");
-const latestItemEl = document.getElementById("latestItem");
+<script>
+  /* ==========================================================================
+   * DOM REFERENCES
+   * ========================================================================== */
 
-const obsToastLayerEl = document.getElementById("obsToastLayer");
+  const statusEl = document.getElementById("status");
+  const logEl = document.getElementById("log");
+  const roomInfoEl = document.getElementById("roomInfo");
+  const playersEl = document.getElementById("players");
+  const sessionStateEl = document.getElementById("sessionState");
+  const itemsEl = document.getElementById("items");
+  const latestItemEl = document.getElementById("latestItem");
+  const obsToastLayerEl = document.getElementById("obsToastLayer");
 
-    const apUrlEl = document.getElementById("apUrl");
-	const chatInputEl = document.getElementById("chatInput");
-    const slotNameEl = document.getElementById("slotName");
-    const gameNameEl = document.getElementById("gameName");
-    const passwordEl = document.getElementById("password");
+  const apUrlEl = document.getElementById("apUrl");
+  const chatInputEl = document.getElementById("chatInput");
+  const slotNameEl = document.getElementById("slotName");
+  const gameNameEl = document.getElementById("gameName");
+  const passwordEl = document.getElementById("password");
 
-const mainGridEl = document.getElementById("mainGrid");
-const connectionCardEl = document.getElementById("connectionCard");
-const hintsCardEl = document.getElementById("hintsCard");
-const logCardEl = document.getElementById("logCard");
-const sessionCardEl = document.getElementById("sessionCard");
-const progressSectionEl = document.getElementById("progressSection");
-const progressTextEl = document.getElementById("progressText");
-const progressFillEl = document.getElementById("progressFill");
+  const connectionCardEl = document.getElementById("connectionCard");
+  const hintsCardEl = document.getElementById("hintsCard");
+  const logCardEl = document.getElementById("logCard");
+  const sessionCardEl = document.getElementById("sessionCard");
 
-const obsParamToggleBtn = document.getElementById("obsParamToggleBtn");
-const obsParamMenu = document.getElementById("obsParamMenu");
+  const obsParamToggleBtn = document.getElementById("obsParamToggleBtn");
+  const obsParamMenu = document.getElementById("obsParamMenu");
+  const obsParamViewEl = document.getElementById("obsParamView");
+  const obsViewSelectEl = document.getElementById("obsViewSelect");
+  const obsParamPassEl = document.getElementById("obsParamPass"); // optional, may not exist
 
-const obsParamPassEl = document.getElementById("obsParamPass");
-const obsParamViewEl = document.getElementById("obsParamView");
-const obsViewSelectEl = document.getElementById("obsViewSelect");
+  const toggleBouncedEl = document.getElementById("toggleBounced");
+  const toggleHideFoundHintsEl = document.getElementById("toggleHideFoundHints");
 
-const toggleBouncedEl = document.getElementById("toggleBounced");
+  const generateObsLinkBtn = document.getElementById("generateObsLinkBtn");
+  const copyObsLinkBtn = document.getElementById("copyObsLinkBtn");
+  const obsLinkOutputEl = document.getElementById("obsLinkOutput");
 
-const generateObsLinkBtn = document.getElementById("generateObsLinkBtn");
-const copyObsLinkBtn = document.getElementById("copyObsLinkBtn");
-const obsLinkOutputEl = document.getElementById("obsLinkOutput");
+  const hintsEl = document.getElementById("hints");
+  const hintsSummaryEl = document.getElementById("hintsSummary");
 
-const hintsEl = document.getElementById("hints");
-const hintsSummaryEl = document.getElementById("hintsSummary");
+  const volumeSlider = document.getElementById("volumeSlider");
+  const volumeLabel = document.getElementById("volumeLabel");
 
+  const progressSectionEl = document.getElementById("progressSection"); // optional, may not exist
+  const progressTextEl = document.getElementById("progressText");       // optional, may not exist
+  const progressFillEl = document.getElementById("progressFill");       // optional, may not exist
 
-const toggleHideFoundHintsEl = document.getElementById("toggleHideFoundHints");
+  /* ==========================================================================
+   * CONSTANTS / STORAGE KEYS
+   * ========================================================================== */
 
-let hintsState = [];
-let hideFoundHints = localStorage.getItem("hideFoundHints") === "true";
-let lastHintIds = new Set();
+  const UUID_COOKIE_NAME = "ap_uuid";
+  const LAST_AP_URL_KEY = "lastApUrl";
 
-if (toggleHideFoundHintsEl) {
-  toggleHideFoundHintsEl.checked = hideFoundHints;
-  toggleHideFoundHintsEl.addEventListener("change", () => {
-    hideFoundHints = toggleHideFoundHintsEl.checked;
-    localStorage.setItem("hideFoundHints", String(hideFoundHints));
-    renderHints();
-  });
-}
+  const RECONNECT_DELAY_MS = 3000;
+  const MAX_RECONNECT_DELAY_MS = 15000;
 
-let showBounced = localStorage.getItem("showBounced") === "true";
+  /* ==========================================================================
+   * APPLICATION STATE
+   * ========================================================================== */
 
-let shouldAutoReconnect = false;
-let manualDisconnect = false;
-let reconnectTimer = null;
-let reconnectAttempts = 0;
+  let browserSocket = null;
+  let roomInfo = null;
+  let connected = null;
+  let receivedItems = [];
+  let dataPackage = {};
+  let playerGameMap = new Map();
 
-const RECONNECT_DELAY_MS = 3000;
-const MAX_RECONNECT_DELAY_MS = 15000;
+  let currentUuid = "";
+  let pendingConnectPayload = null;
 
-const volumeSlider = document.getElementById("volumeSlider");
-const volumeLabel = document.getElementById("volumeLabel");
+  let hintsState = [];
+  let lastHintIds = new Set();
 
-// ✅ SINGLE source of truth
-let volumeLevel = parseFloat(localStorage.getItem("volume") || "1");
+  let shouldAutoReconnect = false;
+  let manualDisconnect = false;
+  let reconnectTimer = null;
+  let reconnectAttempts = 0;
+  let hasEverConnected = false;
 
-// ✅ Apply initial state
-volumeSlider.value = volumeLevel;
-volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+  let audioCtx = null;
+  let audioDebugEnabled = false;
 
-// ✅ Volume slider
-volumeSlider.addEventListener("input", () => {
-  volumeLevel = parseFloat(volumeSlider.value);
-  localStorage.setItem("volume", volumeLevel);
-  volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
-});
+  let hideFoundHints = localStorage.getItem("hideFoundHints") === "true";
+  let showBounced = localStorage.getItem("showBounced") === "true";
+  let volumeLevel = parseFloat(localStorage.getItem("volume") || "1");
 
-// =========================
-// URL PARAM HANDLING (OBS)
-// =========================
+  /* ==========================================================================
+   * URL PARAMS / VIEW MODE
+   * ========================================================================== */
 
-const urlParams = new URLSearchParams(window.location.search);
+  const urlParams = new URLSearchParams(window.location.search);
+  const isAutoMode = urlParams.get("auto") === "1";
 
-const isAutoMode = urlParams.get("auto") === "1";
-
-function getParam(name, fallback = "") {
-  return urlParams.get(name) ?? fallback;
-}
-
-const currentView = (getParam("view", "full") || "full").toLowerCase();
-
-// Apply params to inputs
-function applyUrlParams() {
-  const apUrl = getParam("ap");
-  const slot = getParam("slot");
-  const game = getParam("game");
-  const pass = getParam("pass");
-  const autoconnect = getParam("auto");
-
-  if (apUrl) apUrlEl.value = apUrl;
-  if (slot) slotNameEl.value = slot;
-  if (game) gameNameEl.value = game;
-  if (pass) passwordEl.value = pass;
-
-  return autoconnect === "1" || autoconnect === "true";
-}
-
-function buildConnectPacket() {
-  return [{
-    cmd: "Connect",
-    game: gameNameEl.value.trim(),
-    name: slotNameEl.value.trim(),
-    password: passwordEl.value.trim() || null,
-    uuid: currentUuid,
-    version: { major: 0, minor: 6, build: 0 },
-    tags: ["WebHost"],
-    items_handling: 7,
-    slot_data: false
-  }];
-}
-
-function clearReconnectTimer() {
-  if (reconnectTimer) {
-    clearTimeout(reconnectTimer);
-    reconnectTimer = null;
-  }
-}
-
-function scheduleReconnect() {
-  if (manualDisconnect || !shouldAutoReconnect) {
-    log("Auto-reconnect skipped.", "bad");
-    return;
+  /**
+   * Read a URL search param with fallback.
+   *
+   * @param {string} name
+   * @param {string} [fallback=""]
+   * @returns {string}
+   */
+  function getParam(name, fallback = "") {
+    return urlParams.get(name) ?? fallback;
   }
 
-  clearReconnectTimer();
+  const currentView = (getParam("view", "full") || "full").toLowerCase();
 
-  const delay = Math.min(
-    RECONNECT_DELAY_MS * Math.max(1, reconnectAttempts + 1),
-    MAX_RECONNECT_DELAY_MS
-  );
+  /* ==========================================================================
+   * BASIC HELPERS
+   * ========================================================================== */
 
-  reconnectAttempts += 1;
-
-  setStatus(`Disconnected. Reconnecting in ${Math.ceil(delay / 1000)}s...`, "connecting");
-  log(`Scheduling reconnect attempt ${reconnectAttempts} in ${delay}ms...`, "bad");
-
-reconnectTimer = setTimeout(() => {
-  const normalizedUrl = normalizeApUrl(apUrlEl.value);
-  apUrlEl.value = normalizedUrl;
-
-  saveLastApUrl(normalizedUrl);
-
-  setStatus(`Reconnecting to ${shortUrl(normalizedUrl)}...`, "connecting");
-  log(`Attempting reconnect to ${normalizedUrl}`, "good");
-
-  sendBrowserMessage({
-    type: "connect-ap",
-    apUrl: normalizedUrl
-  });
-}, delay);
-}
-
-if (toggleBouncedEl) {
-  toggleBouncedEl.checked = showBounced;
-
-  toggleBouncedEl.addEventListener("change", () => {
-    showBounced = toggleBouncedEl.checked;
-    localStorage.setItem("showBounced", showBounced);
-  });
-}
-
-const UUID_COOKIE_NAME = "ap_uuid";
-
-    let browserSocket = null;
-    let roomInfo = null;
-    let connected = null;
-    let receivedItems = [];
-	let dataPackage = {};
-	let playerGameMap = new Map();
-let currentUuid = "";
-
-let hasEverConnected = false;
-
-let pendingConnectPayload = null;
-
-function buildObsBrowserSourceLink() {
-  const url = new URL(window.location.origin + "/");
-
-  const ap = apUrlEl.value.trim();
-  const slot = slotNameEl.value.trim();
-  const game = gameNameEl.value.trim();
-  const pass = passwordEl.value.trim();
-  const selectedView = obsViewSelectEl?.value || "full";
-
-  // always include required OBS boot params
-  if (ap) url.searchParams.set("ap", ap);
-  if (slot) url.searchParams.set("slot", slot);
-  if (game) url.searchParams.set("game", game);
-
-  url.searchParams.set("auto", "1");
-
-  // optional extras
-  if (obsParamPassEl?.checked && pass) {
-    url.searchParams.set("pass", pass);
+  /**
+   * Escape user-visible text for safe HTML rendering.
+   *
+   * @param {unknown} value
+   * @returns {string}
+   */
+  function escapeHtml(value) {
+    return String(value)
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
-  if (obsParamViewEl?.checked && selectedView && selectedView !== "full") {
-    url.searchParams.set("view", selectedView);
+  /**
+   * Write a line to the live log panel.
+   *
+   * @param {string} message
+   * @param {string} [kind=""]
+   * @returns {void}
+   */
+  function log(message, kind = "") {
+    if (!logEl) return;
+
+    const line = document.createElement("div");
+    if (kind) line.className = kind;
+    line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+    logEl.appendChild(line);
+    logEl.scrollTop = logEl.scrollHeight;
   }
 
-  return url.toString();
-}
+  /**
+   * Update the status pill text and visual state.
+   *
+   * @param {string} text
+   * @param {string} [state=""]
+   * @returns {void}
+   */
+  function setStatus(text, state = "") {
+    if (!statusEl) return;
+    statusEl.textContent = text;
+    statusEl.className = "status";
+    if (state) statusEl.classList.add(state);
+  }
 
-if (generateObsLinkBtn && obsLinkOutputEl) {
-  generateObsLinkBtn.addEventListener("click", () => {
-    const link = buildObsBrowserSourceLink();
-    obsLinkOutputEl.value = link;
-    log("Generated OBS browser source link.", "good");
-  });
-}
+  /**
+   * Shorten a WebSocket URL to a friendlier host:port display.
+   *
+   * @param {string} url
+   * @returns {string}
+   */
+  function shortUrl(url) {
+    try {
+      const u = new URL(url);
+      return `${u.hostname}${u.port ? ":" + u.port : ""}`;
+    } catch {
+      return url;
+    }
+  }
 
-if (copyObsLinkBtn && obsLinkOutputEl) {
-  copyObsLinkBtn.addEventListener("click", async () => {
-    const link = buildObsBrowserSourceLink();
-    obsLinkOutputEl.value = link;
+  /**
+   * Normalize a user-provided Archipelago server URL.
+   *
+   * - Adds wss:// if no protocol is present
+   * - Upgrades ws://archipelago.gg to wss://archipelago.gg
+   *
+   * @param {string} url
+   * @returns {string}
+   */
+  function normalizeApUrl(url) {
+    let normalized = String(url || "").trim();
+
+    if (!/^wss?:\/\//i.test(normalized)) {
+      normalized = "wss://" + normalized;
+    }
+
+    if (/^ws:\/\/archipelago\.gg(?::\d+)?$/i.test(normalized)) {
+      normalized = normalized.replace(/^ws:\/\//i, "wss://");
+    }
+
+    return normalized;
+  }
+
+  /**
+   * Check whether current page is being used as an OBS auto-boot overlay.
+   *
+   * @returns {boolean}
+   */
+  function isObsConnection() {
+    return urlParams.get("auto") === "1";
+  }
+
+  /* ==========================================================================
+   * COOKIE / UUID HELPERS
+   * ========================================================================== */
+
+  /**
+   * Set a session cookie.
+   *
+   * @param {string} name
+   * @param {string} value
+   * @returns {void}
+   */
+  function setSessionCookie(name, value) {
+    document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
+  }
+
+  /**
+   * Read a cookie by name.
+   *
+   * @param {string} name
+   * @returns {string}
+   */
+  function getCookie(name) {
+    const target = `${encodeURIComponent(name)}=`;
+    const parts = document.cookie.split(";");
+
+    for (const part of parts) {
+      const trimmed = part.trim();
+      if (trimmed.startsWith(target)) {
+        return decodeURIComponent(trimmed.slice(target.length));
+      }
+    }
+
+    return "";
+  }
+
+  /**
+   * Remove a cookie.
+   *
+   * @param {string} name
+   * @returns {void}
+   */
+  function clearCookie(name) {
+    document.cookie = `${encodeURIComponent(name)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
+  }
+
+  /**
+   * Generate a UUID, preferring crypto.randomUUID when available.
+   *
+   * @returns {string}
+   */
+  function generateUuid() {
+    if (window.crypto?.randomUUID) {
+      return window.crypto.randomUUID();
+    }
+
+    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+      const r = Math.random() * 16 | 0;
+      const v = c === "x" ? r : (r & 0x3) | 0x8;
+      return v.toString(16);
+    });
+  }
+
+  /**
+   * Save the current UUID into a session cookie.
+   *
+   * @returns {void}
+   */
+  function saveUuidToSessionCookie() {
+    if (!currentUuid) {
+      clearCookie(UUID_COOKIE_NAME);
+      return;
+    }
+
+    setSessionCookie(UUID_COOKIE_NAME, currentUuid);
+  }
+
+  /**
+   * Load the current session UUID, creating one if missing.
+   *
+   * @returns {void}
+   */
+  function loadOrCreateUuid() {
+    let uuid = getCookie(UUID_COOKIE_NAME);
+
+    if (!uuid) {
+      uuid = generateUuid();
+      setSessionCookie(UUID_COOKIE_NAME, uuid);
+      log(`Generated UUID for session: ${uuid}`, "good");
+    } else {
+      log(`Loaded UUID from session: ${uuid}`, "good");
+    }
+
+    currentUuid = uuid;
+  }
+
+  /* ==========================================================================
+   * LOCAL STORAGE HELPERS
+   * ========================================================================== */
+
+  /**
+   * Save the last Archipelago URL used.
+   *
+   * @param {string} url
+   * @returns {void}
+   */
+  function saveLastApUrl(url) {
+    const normalizedUrl = normalizeApUrl(url);
+    if (!normalizedUrl) return;
+    localStorage.setItem(LAST_AP_URL_KEY, normalizedUrl);
+  }
+
+  /**
+   * Restore the last Archipelago URL used.
+   *
+   * @returns {void}
+   */
+  function loadLastApUrl() {
+    const saved = localStorage.getItem(LAST_AP_URL_KEY);
+    if (!saved || !apUrlEl) return;
+    apUrlEl.value = normalizeApUrl(saved);
+  }
+
+  /* ==========================================================================
+   * AUDIO HELPERS
+   * ========================================================================== */
+
+  /**
+   * Write a debug log line for audio internals when enabled.
+   *
+   * @param {string} message
+   * @param {string} [kind="small"]
+   * @returns {void}
+   */
+  function audioDebug(message, kind = "small") {
+    if (!audioDebugEnabled) return;
+    log(`[AUDIO] ${message}`, kind);
+  }
+
+  /**
+   * Get or create the shared AudioContext.
+   *
+   * @returns {AudioContext|null}
+   */
+  function getAudioCtx() {
+    audioDebug(`getAudioCtx() called. Existing ctx: ${!!audioCtx}`);
+
+    if (!audioCtx) {
+      const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+      if (!AudioContextClass) {
+        audioDebug("AudioContext not supported in this browser.", "bad");
+        return null;
+      }
+
+      audioCtx = new AudioContextClass();
+      audioDebug(`Created AudioContext. Initial state: ${audioCtx.state}`);
+    }
+
+    if (audioCtx.state === "suspended") {
+      audioCtx.resume()
+        .then(() => {
+          audioDebug(`AudioContext resumed successfully. New state: ${audioCtx.state}`, "good");
+        })
+        .catch((err) => {
+          audioDebug(`AudioContext resume failed: ${err?.message || err}`, "bad");
+        });
+    }
+
+    return audioCtx;
+  }
+
+  /**
+   * Play a short synthesized tone.
+   *
+   * @param {object} [options={}]
+   * @param {number} [options.frequency=440]
+   * @param {OscillatorType} [options.type="sine"]
+   * @param {number} [options.duration=0.12]
+   * @param {number} [options.volume=0.034]
+   * @param {number} [options.delay=0]
+   * @returns {void}
+   */
+  function playTone({
+    frequency = 440,
+    type = "sine",
+    duration = 0.12,
+    volume = 0.034,
+    delay = 0
+  } = {}) {
+    const ctx = getAudioCtx();
+    if (!ctx || volumeLevel === 0) return;
+
+    const finalVolume = volume * volumeLevel;
+    const now = ctx.currentTime + delay;
 
     try {
-      await navigator.clipboard.writeText(link);
-      log("Copied OBS browser source link to clipboard.", "good");
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(frequency, now);
+
+      gain.gain.setValueAtTime(0.0001, now);
+      gain.gain.exponentialRampToValueAtTime(finalVolume, now + 0.01);
+      gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
+
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+
+      osc.start(now);
+      osc.stop(now + duration + 0.02);
     } catch (err) {
-      log("Could not copy OBS link automatically. Copy it from the box instead.", "bad");
-    }
-  });
-}
-
-if (obsParamToggleBtn && obsParamMenu) {
-  obsParamToggleBtn.addEventListener("click", () => {
-    obsParamMenu.classList.toggle("hidden");
-    obsParamToggleBtn.textContent = obsParamMenu.classList.contains("hidden")
-      ? "OBS Link Options ▼"
-      : "OBS Link Options ▲";
-  });
-
-  document.addEventListener("click", (event) => {
-    if (!obsParamMenu.contains(event.target) && !obsParamToggleBtn.contains(event.target)) {
-      obsParamMenu.classList.add("hidden");
-      obsParamToggleBtn.textContent = "OBS Link Options ▼";
-    }
-  });
-}
-
-document.addEventListener("DOMContentLoaded", () => {
-loadLastApUrl();
-
-  const viewDescriptions = {
-    "item-alert": "Shows only popup item alerts. No main panel cards.",
-    "log": "Shows just the live log overlay.",
-    "full": "Shows the normal full panel layout.",
-    "compact": "Shows a minimal session overlay without the full item list."
-  };
-
-  const viewSelect = document.getElementById("obsViewSelect");
-  const viewDesc = document.getElementById("viewDescription");
-
-  if (!viewSelect || !viewDesc) return;
-
-  function updateViewDescription() {
-    viewDesc.textContent = viewDescriptions[viewSelect.value] || "";
-  }
-
-  viewSelect.addEventListener("change", updateViewDescription);
-  updateViewDescription();
-});
-
-function applyViewMode() {
-  const view = currentView;
-
-  document.body.classList.remove(
-    "obs-mode",
-    "view-progress",
-    "view-log",
-    "view-compact",
-    "view-item-alert"
-  );
-
-  if (!["progress", "log", "compact", "item-alert"].includes(view)) {
-    return;
-  }
-
-  document.body.classList.add("obs-mode", `view-${view}`);
-
-  // hide everything first
-  connectionCardEl?.classList.add("hidden");
-  logCardEl?.classList.add("hidden");
-  sessionCardEl?.classList.add("hidden");
-  hintsCardEl?.classList.add("hidden");
-
-  document.querySelector(".topbar")?.classList.add("hidden");
-
-  const sessionHeader = sessionStateEl?.parentElement;
-  if (sessionHeader) sessionHeader.classList.remove("hidden");
-
-  itemsEl?.classList.remove("hidden");
-
-  const itemsSection = document.querySelector(".items-section");
-  itemsSection?.classList.remove("hidden");
-
-  if (itemsSection) {
-    const headings = itemsSection.querySelectorAll("h2");
-    headings.forEach((h) => h.classList.remove("hidden"));
-  }
-
-  if (view === "progress") {
-    sessionCardEl?.classList.remove("hidden");
-    if (sessionHeader) sessionHeader.classList.add("hidden");
-    itemsSection?.classList.add("hidden");
-  }
-
-  if (view === "log") {
-    logCardEl?.classList.remove("hidden");
-  }
-
-  if (view === "compact") {
-    sessionCardEl?.classList.remove("hidden");
-    if (sessionHeader) sessionHeader.classList.add("hidden");
-
-    itemsEl?.classList.add("hidden");
-
-    if (itemsSection) {
-      const headings = itemsSection.querySelectorAll("h2");
-      if (headings[1]) headings[1].classList.add("hidden");
+      audioDebug(`playTone() error: ${err?.message || err}`, "bad");
     }
   }
 
-  if (view === "item-alert") {
-    // toast-only mode, everything else stays hidden
-  }
-}
-
-function getHintKey(hint) {
-  return [
-    hint.finding_player ?? "",
-    hint.location ?? "",
-    hint.receiving_player ?? "",
-    hint.item ?? ""
-  ].join(":");
-}
-
-
-function isHintImportantToYou(hint) {
-  if (!hint || typeof hint !== "object") return false;
-
-  const flags = Number(hint.flags ?? hint.item_flags ?? NaN);
-
-  if (Number.isFinite(flags)) {
-    return (flags & 1) !== 0 || (flags & 2) !== 0;
+  /**
+   * Play the connection chime.
+   *
+   * @returns {void}
+   */
+  function playConnectChime() {
+    playTone({ frequency: 523.25, type: "sine", duration: 0.14, volume: 0.03, delay: 0.00 });
+    playTone({ frequency: 659.25, type: "sine", duration: 0.16, volume: 0.028, delay: 0.08 });
+    playTone({ frequency: 783.99, type: "sine", duration: 0.20, volume: 0.025, delay: 0.16 });
   }
 
-  return hint.important === true;
-}
-
-function getHintStatus(hint) {
-  if (hint.found === true) return "found";
-  return "unfound";
-}
-
-function upsertHints(newHints) {
-  if (!Array.isArray(newHints) || !newHints.length) return;
-
-  const byKey = new Map(hintsState.map((hint) => [getHintKey(hint), hint]));
-
-  for (const hint of newHints) {
-    const key = getHintKey(hint);
-    byKey.set(key, { ...(byKey.get(key) || {}), ...hint });
+  /**
+   * Play the default item ping.
+   *
+   * @returns {void}
+   */
+  function playItemPing() {
+    playTone({ frequency: 880, type: "sine", duration: 0.10, volume: 0.025, delay: 0.00 });
+    playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.05 });
   }
 
-  hintsState = Array.from(byKey.values());
-  renderHints();
-}
-
-const LAST_AP_URL_KEY = "lastApUrl";
-
-function saveLastApUrl(url) {
-  const normalizedUrl = normalizeApUrl(url);
-
-  if (!normalizedUrl) return;
-
-  localStorage.setItem(LAST_AP_URL_KEY, normalizedUrl);
-}
-
-function loadLastApUrl() {
-  const saved = localStorage.getItem(LAST_AP_URL_KEY);
-
-  if (!saved) return;
-
-  apUrlEl.value = normalizeApUrl(saved);
-}
-
-// REPLACE your current renderHints() with this
-function renderHints() {
-  if (!hintsEl) return;
-
-  hintsEl.innerHTML = "";
-
-  if (!hintsState.length) {
-    hintsEl.innerHTML = '<div class="muted small">No active hints yet.</div>';
-    if (hintsSummaryEl) hintsSummaryEl.textContent = "No hints yet.";
-    return;
-  }
-
-  const myImportantCount = hintsState.filter(isHintImportantToYou).length;
-  const foundCount = hintsState.filter((hint) => getHintStatus(hint) === "found").length;
-  const visibleHints = hideFoundHints
-    ? hintsState.filter((hint) => getHintStatus(hint) !== "found")
-    : hintsState;
-
-  if (hintsSummaryEl) {
-    const hiddenText = hideFoundHints ? ` • showing ${visibleHints.length}` : "";
-    hintsSummaryEl.textContent =
-      `${hintsState.length} hint(s) • ${foundCount} found • ${myImportantCount} important${hiddenText}`;
-  }
-
-  if (!visibleHints.length) {
-    hintsEl.innerHTML = '<div class="muted small">No unfound hints to show.</div>';
-    return;
-  }
-
-  const sortedHints = [...visibleHints].sort((a, b) => {
-    const aFound = getHintStatus(a) === "found" ? 1 : 0;
-    const bFound = getHintStatus(b) === "found" ? 1 : 0;
-    if (aFound !== bFound) return aFound - bFound;
-
-    const aImportant = isHintImportantToYou(a) ? 1 : 0;
-    const bImportant = isHintImportantToYou(b) ? 1 : 0;
-    if (aImportant !== bImportant) return bImportant - aImportant;
-
-    return 0;
-  });
-
-  for (const hint of sortedHints) {
-    const div = document.createElement("div");
-
-    const important = isHintImportantToYou(hint);
-    const status = getHintStatus(hint);
-
-    const locationGameSlot = hint.finding_player ?? connected?.slot;
-    const itemGameSlot = hint.receiving_player ?? connected?.slot;
-
-    const locationName =
-      hint._hint_text_location_name ||
-      lookupLocationName(hint.location, locationGameSlot);
-
-    const itemName =
-      hint._hint_text_item_name ||
-      lookupItemName(hint.item, itemGameSlot);
-
-    const finderName =
-      hint._hint_text_owner_name ||
-      getPlayerName(hint.finding_player) ||
-      `Slot ${hint.finding_player ?? "?"}`;
-
-    const receiverName =
-      hint._hint_text_owner_name ||
-      getPlayerName(hint.receiving_player) ||
-      `Slot ${hint.receiving_player ?? "?"}`;
-
-    const importantBadge = important
-      ? '<span class="hint-badge hint-badge-important">Important</span>'
-      : "";
-
-    div.className = `hint-item hint-${status}${important ? " hint-important" : ""}`;
-
-    div.innerHTML = `
-      <div class="hint-head">
-        <div class="hint-title">${escapeHtml(String(itemName ?? "Unknown item"))}</div>
-        <div class="hint-badges">
-          <span class="hint-badge hint-badge-${status}">
-            ${status === "found" ? "Found" : "Unfound"}
-          </span>
-          ${importantBadge}
-        </div>
-      </div>
-
-      <div class="hint-meta">
-        <div><strong>Location:</strong> ${escapeHtml(String(locationName ?? "Unknown location"))}</div>
-        <div><strong>Found by:</strong> ${escapeHtml(String(finderName))}</div>
-        <div><strong>For:</strong> ${escapeHtml(String(receiverName))}</div>
-        <div class="muted-line">Location ID: ${escapeHtml(String(hint.location ?? "?"))} • Item ID: ${escapeHtml(String(hint.item ?? "?"))}</div>
-      </div>
-    `;
-
-    hintsEl.appendChild(div);
-  }
-}
-
-function applyAutoMode() {
-  if (!isAutoMode) return;
-
-  // Hide full UI panels
-  connectionCardEl?.classList.add("hidden");
-
-  // Hide left column extras
-  document.querySelector(".players-section")?.classList.add("hidden");
-
-  // Optional: hide room + chat blocks
-  document.querySelector("#roomInfo")?.closest("div")?.classList.add("hidden");
-  document.querySelector("#chatInput")?.closest("div")?.classList.add("hidden");
-
-  // Hide OBS link generator UI
-  document.querySelector("#obsLinkOutput")?.closest("div")?.classList.add("hidden");
-
-  // Hide top bar
-  document.querySelector(".topbar")?.classList.add("hidden");
-}
-
-let audioCtx = null;
-let audioDebugEnabled = false;
-
-function audioDebug(message, kind = "small") {
-  if (!audioDebugEnabled) return;
-  log(`[AUDIO] ${message}`, kind);
-}
-
-function getAudioCtx() {
-  audioDebug(`getAudioCtx() called. Existing ctx: ${!!audioCtx}`);
-
-  if (!audioCtx) {
-    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
-    if (!AudioContextClass) {
-      audioDebug("AudioContext not supported in this browser.", "bad");
-      return null;
+  /**
+   * Play a classification-specific toast sound.
+   *
+   * @param {string} classificationKey
+   * @returns {void}
+   */
+  function playToastSound(classificationKey) {
+    if (classificationKey === "trap") {
+      playTone({ frequency: 240, type: "sawtooth", duration: 0.12, volume: 0.028, delay: 0.00 });
+      playTone({ frequency: 180, type: "triangle", duration: 0.18, volume: 0.018, delay: 0.05 });
+      return;
     }
 
-    audioCtx = new AudioContextClass();
-    audioDebug(`Created AudioContext. Initial state: ${audioCtx.state}`);
-  }
-
-  if (audioCtx.state === "suspended") {
-    audioDebug("AudioContext is suspended. Attempting resume...");
-    audioCtx.resume()
-      .then(() => {
-        audioDebug(`AudioContext resumed successfully. New state: ${audioCtx.state}`, "good");
-      })
-      .catch((err) => {
-        audioDebug(`AudioContext resume failed: ${err?.message || err}`, "bad");
-      });
-  } else {
-    audioDebug(`AudioContext already active. State: ${audioCtx.state}`, "good");
-  }
-
-  return audioCtx;
-}
-
-function playTone({
-  frequency = 440,
-  type = "sine",
-  duration = 0.12,
-  volume = 0.034,
-  delay = 0
-} = {}) {
-  audioDebug(
-    `playTone() requested: freq=${frequency}, type=${type}, duration=${duration}, volume=${volume}, delay=${delay}`
-  );
-
-  const ctx = getAudioCtx();
-  if (!ctx) {
-    audioDebug("playTone() aborted: no audio context.", "bad");
-    return;
-  }
-
-  if (volumeLevel === 0) {
-    audioDebug("playTone() aborted: volumeLevel is 0 (muted).", "bad");
-    return;
-  }
-
-  const finalVolume = volume * volumeLevel;
-  const now = ctx.currentTime + delay;
-
-  audioDebug(
-    `Scheduling tone. ctx.state=${ctx.state}, ctx.currentTime=${ctx.currentTime.toFixed(4)}, now=${now.toFixed(4)}, volumeLevel=${volumeLevel}, finalVolume=${finalVolume.toFixed(5)}`
-  );
-
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-
-    osc.type = type;
-    osc.frequency.setValueAtTime(frequency, now);
-
-    gain.gain.setValueAtTime(0.0001, now);
-    gain.gain.exponentialRampToValueAtTime(finalVolume, now + 0.01);
-    gain.gain.exponentialRampToValueAtTime(0.0001, now + duration);
-
-    osc.connect(gain);
-    gain.connect(ctx.destination);
-
-    osc.onended = () => {
-      audioDebug(`Tone ended: freq=${frequency}`, "good");
-    };
-
-    osc.start(now);
-    osc.stop(now + duration + 0.02);
-
-    audioDebug(`Tone started/scheduled successfully: freq=${frequency}`, "good");
-  } catch (err) {
-    audioDebug(`playTone() error: ${err?.message || err}`, "bad");
-  }
-}
-
-function playConnectChime() {
-  audioDebug("playConnectChime() called", "good");
-  playTone({ frequency: 523.25, type: "sine", duration: 0.14, volume: 0.03, delay: 0.00 });
-  playTone({ frequency: 659.25, type: "sine", duration: 0.16, volume: 0.028, delay: 0.08 });
-  playTone({ frequency: 783.99, type: "sine", duration: 0.20, volume: 0.025, delay: 0.16 });
-}
-
-
-
-function playItemPing() {
-  playTone({ frequency: 880, type: "sine", duration: 0.10, volume: 0.025, delay: 0.00 });
-  playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.05 });
-}
-
-
-    function log(message, kind = "") {
-      const line = document.createElement("div");
-      if (kind) line.className = kind;
-      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
-      logEl.appendChild(line);
-      logEl.scrollTop = logEl.scrollHeight;
+    if (classificationKey === "progression") {
+      playTone({ frequency: 987.77, type: "sine", duration: 0.10, volume: 0.028, delay: 0.00 });
+      playTone({ frequency: 1318.51, type: "sine", duration: 0.12, volume: 0.022, delay: 0.05 });
+      playTone({ frequency: 1567.98, type: "sine", duration: 0.14, volume: 0.018, delay: 0.10 });
+      return;
     }
 
-function setStatus(text, state = "") {
-  statusEl.textContent = text;
-  statusEl.className = "status";
-  if (state) statusEl.classList.add(state);
-}
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll("&", "&amp;")
-        .replaceAll("<", "&lt;")
-        .replaceAll(">", "&gt;")
-        .replaceAll('"', "&quot;")
-        .replaceAll("'", "&#039;");
+    if (classificationKey === "useful") {
+      playTone({ frequency: 880, type: "sine", duration: 0.09, volume: 0.024, delay: 0.00 });
+      playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.04 });
+      return;
     }
 
-function renderLatestItem(item = null) {
-  if (!latestItemEl) return;
-
-  if (!item) {
-    latestItemEl.className = "latest-item muted small";
-    latestItemEl.innerHTML = "No items yet.";
-    return;
+    playItemPing();
   }
 
-  const itemLookupSlot = connected?.slot;
-  const locationLookupSlot =
-    item.player === 0 || item.player == null ? connected?.slot : item.player;
+  /* ==========================================================================
+   * AP PACKET / CONNECTION HELPERS
+   * ========================================================================== */
 
-  const itemName = lookupItemName(item.item, itemLookupSlot);
-
-  let sourceLine = "";
-  if (item.location === -2 && item.player === 0) {
-    sourceLine = `<div class="muted">Source: Start inventory / precollected</div>`;
-  } else {
-    const locationName = lookupLocationName(item.location, locationLookupSlot);
-    sourceLine = `<div class="muted">Location: ${escapeHtml(locationName)} [${item.location ?? "?"}]</div>`;
-  }
-
-  let fromLine = "";
-  if (item.player === 0) {
-    fromLine = `<div class="muted">From: System</div>`;
-  } else {
-    const playerName = getPlayerName(item.player);
-    fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
-  }
-
-  latestItemEl.className = "latest-item small";
-  latestItemEl.innerHTML = `
-    <div><strong>${escapeHtml(itemName)}</strong> <span class="muted">[${item.item ?? "?"}]</span></div>
-    ${sourceLine}
-    ${fromLine}
-  `;
-}
-
-function flashLatestItem() {
-  if (!latestItemEl) return;
-
-  latestItemEl.classList.remove("latest-item-flash");
-
-  // restart animation cleanly
-  void latestItemEl.offsetWidth;
-
-  latestItemEl.classList.add("latest-item-flash");
-}
-
-function setSessionCookie(name, value) {
-  document.cookie = `${encodeURIComponent(name)}=${encodeURIComponent(value)}; path=/; SameSite=Lax`;
-}
-
-function getCookie(name) {
-  const target = `${encodeURIComponent(name)}=`;
-  const parts = document.cookie.split(";");
-
-  for (const part of parts) {
-    const trimmed = part.trim();
-    if (trimmed.startsWith(target)) {
-      return decodeURIComponent(trimmed.slice(target.length));
-    }
-  }
-
-  return "";
-}
-
-function clearCookie(name) {
-  document.cookie = `${encodeURIComponent(name)}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax`;
-}
-
-function generateUuid() {
-  if (window.crypto?.randomUUID) {
-    return window.crypto.randomUUID();
-  }
-
-  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
-    const r = Math.random() * 16 | 0;
-    const v = c === "x" ? r : (r & 0x3) | 0x8;
-    return v.toString(16);
-  });
-}
-
-function saveUuidToSessionCookie() {
-  if (!currentUuid) {
-    clearCookie(UUID_COOKIE_NAME);
-    return;
-  }
-
-  setSessionCookie(UUID_COOKIE_NAME, currentUuid);
-}
-
-function loadOrCreateUuid() {
-  let uuid = getCookie(UUID_COOKIE_NAME);
-
-  if (!uuid) {
-    uuid = generateUuid();
-    setSessionCookie(UUID_COOKIE_NAME, uuid);
-    log(`Generated UUID for session: ${uuid}`, "good");
-  } else {
-    log(`Loaded UUID from session: ${uuid}`, "good");
-  }
-
-  currentUuid = uuid;
-}
-
-function rebuildPlayerGameMap() {
-  playerGameMap = new Map();
-
-  const players = getPlayersList();
-  for (const p of players) {
-    if (p && p.slot != null && p.game) {
-      playerGameMap.set(Number(p.slot), p.game);
-    }
-  }
-}
-
-function getOwnGame() {
-  return (
-    gameNameEl.value.trim() ||
-    connected?.slot_info?.[connected?.slot]?.game ||
-    playerGameMap.get(Number(connected?.slot)) ||
-    null
-  );
-}
-
-
-function getGameForPlayerSlot(slot) {
-  const numericSlot = Number(slot);
-
-  if (Number.isFinite(numericSlot) && playerGameMap.has(numericSlot)) {
-    return playerGameMap.get(numericSlot);
-  }
-
-  if (connected?.slot_info?.[numericSlot]?.game) {
-    return connected.slot_info[numericSlot].game;
-  }
-
-  // precollected/system items and "your own" checks often need this fallback
-  return getOwnGame();
-}
-
-function getPlayerName(slot) {
-  const numericSlot = Number(slot);
-
-  const players = getPlayersList();
-  const player = players.find((p) => Number(p.slot) === numericSlot);
-
-  return player?.alias || player?.name || `Player ${numericSlot}`;
-}
-
-function lookupItemName(itemId, playerSlot) {
-  const game = getGameForPlayerSlot(playerSlot);
-  if (!game) return `Item ${itemId}`;
-
-  const gameData = dataPackage?.games?.[game];
-  const itemIdToName = gameData?.item_name_to_id
-    ? Object.fromEntries(
-        Object.entries(gameData.item_name_to_id).map(([name, id]) => [String(id), name])
-      )
-    : {};
-
-  return itemIdToName[String(itemId)] || `Item ${itemId}`;
-}
-
-function lookupLocationName(locationId, playerSlot) {
-  const game = getGameForPlayerSlot(playerSlot);
-  if (!game) return `Location ${locationId}`;
-
-  const gameData = dataPackage?.games?.[game];
-  const locationIdToName = gameData?.location_name_to_id
-    ? Object.fromEntries(
-        Object.entries(gameData.location_name_to_id).map(([name, id]) => [String(id), name])
-      )
-    : {};
-
-  return locationIdToName[String(locationId)] || `Location ${locationId}`;
-}
-
-function formatPrintJson(parts) {
-  if (!Array.isArray(parts)) return String(parts ?? "");
-
-  return parts.map((part) => {
-    if (!part || typeof part !== "object") {
-      return String(part ?? "");
-    }
-
-    if (part.type === "item_id") {
-      const itemId = Number(part.text);
-      const playerSlot =
-        part.player === 0 || part.player == null ? connected?.slot : part.player;
-
-      return `${lookupItemName(itemId, playerSlot)} [${itemId}]`;
-    }
-
-    if (part.type === "location_id") {
-      const locationId = Number(part.text);
-      const playerSlot = part.player === 0 || part.player == null ? connected?.slot : part.player;
-
-      return `${lookupLocationName(locationId, playerSlot)} [${locationId}]`;
-    }
-
-    if (part.type === "player_id") {
-      const slot = Number(part.text);
-      const players = connected?.players || roomInfo?.players || [];
-      const player = players.find((p) => Number(p.slot) === slot);
-      return player?.alias || player?.name || `Player ${slot}`;
-    }
-
-    return part.text ?? "";
-  }).join("");
-}
-
-function isObsConnection() {
-  const params = new URLSearchParams(window.location.search);
-  return params.get("auto") === "1";
-}
-
-function sendConnectPacket() {
-  if (!currentUuid) {
-    loadOrCreateUuid();
-  }
-
-  getAudioCtx();
-  playConnectChime();
-
-  manualDisconnect = false;
-  shouldAutoReconnect = true;
-  clearReconnectTimer();
-
-  const payload = [
-    {
+  /**
+   * Build the Connect packet sent to Archipelago.
+   *
+   * @returns {Array<object>}
+   */
+  function buildConnectPacket() {
+    return [{
       cmd: "Connect",
-      game: String(gameNameEl.value || "").trim(),
+      game: gameNameEl.value.trim(),
       name: slotNameEl.value.trim(),
-      password: passwordEl.value,
+      password: passwordEl.value.trim() || null,
       uuid: currentUuid,
-      version: { major: 0, minor: 6, build: 0, class: "Version" },
+      version: { major: 0, minor: 6, build: 0 },
+      tags: ["WebHost"],
       items_handling: 7,
-      tags: ["Tracker"]
+      slot_data: false
+    }];
+  }
+
+  /**
+   * Clear any pending reconnect timer.
+   *
+   * @returns {void}
+   */
+  function clearReconnectTimer() {
+    if (reconnectTimer) {
+      clearTimeout(reconnectTimer);
+      reconnectTimer = null;
     }
-  ];
+  }
 
-  if (connected) {
-    log("Already authenticated. Reconnecting before switching game/slot...", "bad");
-    pendingConnectPayload = payload;
-    resetSessionState();
-    updateProgressDisplay();
+  /**
+   * Schedule a reconnect attempt with backoff.
+   *
+   * @returns {void}
+   */
+  function scheduleReconnect() {
+    if (manualDisconnect || !shouldAutoReconnect) {
+      log("Auto-reconnect skipped.", "bad");
+      return;
+    }
 
-    sendBrowserMessage({ type: "disconnect-ap" });
+    clearReconnectTimer();
 
-    setTimeout(() => {
+    const delay = Math.min(
+      RECONNECT_DELAY_MS * Math.max(1, reconnectAttempts + 1),
+      MAX_RECONNECT_DELAY_MS
+    );
+
+    reconnectAttempts += 1;
+
+    setStatus(`Disconnected. Reconnecting in ${Math.ceil(delay / 1000)}s...`, "connecting");
+    log(`Scheduling reconnect attempt ${reconnectAttempts} in ${delay}ms...`, "bad");
+
+    reconnectTimer = setTimeout(() => {
       const normalizedUrl = normalizeApUrl(apUrlEl.value);
       apUrlEl.value = normalizedUrl;
+
+      saveLastApUrl(normalizedUrl);
+
+      setStatus(`Reconnecting to ${shortUrl(normalizedUrl)}...`, "connecting");
+      log(`Attempting reconnect to ${normalizedUrl}`, "good");
+
       sendBrowserMessage({
         type: "connect-ap",
         apUrl: normalizedUrl
       });
-    }, 250);
-
-    return;
+    }, delay);
   }
 
-  pendingConnectPayload = payload;
+  /**
+   * Send a payload to the local browser proxy WebSocket.
+   *
+   * @param {object} payload
+   * @returns {void}
+   */
+  function sendBrowserMessage(payload) {
+    ensureBrowserSocket();
 
-  log(`Sending Connect packet with session UUID ${currentUuid}`, "good");
-  log(`Using UUID: ${currentUuid}`, "good");
-  sendAp(payload);
-}
+    const sendNow = () => {
+      browserSocket.send(JSON.stringify(payload));
+    };
 
-document.getElementById("loginBtn").addEventListener("click", sendConnectPacket);
-
-function autoLoginIfReady() {
-  const slot = slotNameEl.value.trim();
-  const game = gameNameEl.value.trim();
-
-  if (!slot || !game) {
-    log("Auto-connect skipped: missing slot or game.", "bad");
-    return;
-  }
-
-  pendingConnectPayload = buildConnectPacket();
-
-  log("Prepared Connect packet for auto-login.", "good");
-}
-    function ensureBrowserSocket() {
-      if (browserSocket && browserSocket.readyState === WebSocket.OPEN) return;
-
-      const proto = location.protocol === "https:" ? "wss:" : "ws:";
-      browserSocket = new WebSocket(`${proto}//${location.host}/ws`);
-
-browserSocket.addEventListener("open", () => {
-  log("Browser connected to local proxy.", "good");
-
-  const shouldAuto = applyUrlParams();
-
-if (shouldAuto) {
-  autoLoginIfReady();
-
-  setStatus("Connecting...", "connecting");
-
-  sendBrowserMessage({
-    type: "connect-ap",
-    apUrl: apUrlEl.value
-  });
-
-  log("Auto-connecting via URL params...", "good");
-}
-});
-
-volumeSlider.addEventListener("input", () => {
-  volumeLevel = parseFloat(volumeSlider.value);
-  localStorage.setItem("volume", volumeLevel);
-  volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
-});
-
-browserSocket.addEventListener("close", (event) => {
-  clearReconnectTimer();
-  log(`Browser proxy socket closed. Code: ${event.code} Reason: ${event.reason || "none"}`, "bad");
-  setStatus("Disconnected", "bad");
-});
-
-browserSocket.addEventListener("error", () => {
-  setStatus("Proxy socket error", "bad");
-  log("Browser proxy socket error.", "bad");
-});
-
-      browserSocket.addEventListener("message", (event) => {
-        const msg = JSON.parse(event.data);
-
-if (msg.type === "ap-open") {
-  audioDebug("Received ap-open event. Auto-mode/server-open chime path firing.", "good");
-
-  clearReconnectTimer();
-  reconnectAttempts = 0;
-  manualDisconnect = false;
-  hasEverConnected = true;
-
-  setStatus(`Connected to ${shortUrl(msg.apUrl)}`, "good");
-  log(`Connected to Archipelago socket: ${msg.apUrl}`, "good");
-  playConnectChime();
-
-  sendAp([{ cmd: "GetDataPackage" }]);
-  log("Requested DataPackage.", "good");
-
-  if (pendingConnectPayload) {
-    sendAp(pendingConnectPayload);
-    log("Sent pending Connect packet after reconnect.", "good");
-  } else if (isObsConnection()) {
-    log("OBS connection detected. Triggering Send Connect Packet.", "good");
-    document.getElementById("loginBtn").click();
-  }
-
-  return;
-}
-
-if (msg.type === "ap-close") {
-  setStatus("Disconnected", "bad");
-  log("Disconnected from Archipelago server.", "bad");
-
-  if (!manualDisconnect && shouldAutoReconnect && hasEverConnected) {
-    scheduleReconnect();
-  } else {
-    log("Reconnect skipped.", "bad");
-  }
-
-  return;
-}
-
-if (msg.type === "error") {
-  setStatus("Connection error", "bad");
-  log(msg.message, "bad");
-  return;
-}
-
-        if (msg.type === "ap-message") {
-          handleApPackets(msg.packets, msg.raw);
-        }
-      });
+    if (browserSocket.readyState === WebSocket.OPEN) {
+      sendNow();
+    } else {
+      browserSocket.addEventListener("open", sendNow, { once: true });
     }
-
-function shortUrl(url) {
-  try {
-    const u = new URL(url);
-    return `${u.hostname}${u.port ? ":" + u.port : ""}`;
-  } catch {
-    return url;
   }
-}
 
-function setHints(newHints) {
-  hintsState = Array.isArray(newHints) ? [...newHints] : [];
-  renderHints();
-}
+  /**
+   * Send a packet array to the Archipelago socket through the proxy.
+   *
+   * @param {Array<object>} payload
+   * @returns {void}
+   */
+  function sendAp(payload) {
+    sendBrowserMessage({ type: "send-ap", payload });
+  }
 
-function resetSessionState() {
-  roomInfo = null;
-  connected = null;
-  receivedItems = [];
-  dataPackage = {};
-  playerGameMap = new Map();
+  /**
+   * Ensure the browser is connected to the local proxy WebSocket.
+   *
+   * @returns {void}
+   */
+  function ensureBrowserSocket() {
+    if (browserSocket && browserSocket.readyState === WebSocket.OPEN) return;
 
-  hintsState = [];
-  lastHintIds = new Set();
+    const proto = location.protocol === "https:" ? "wss:" : "ws:";
+    browserSocket = new WebSocket(`${proto}//${location.host}/ws`);
 
-  renderRoom();
-  renderPlayers();
-  renderSession();
-  renderItems();
-  renderLatestItem();
-  renderHints();
-  updateProgressDisplay();
-}
+    browserSocket.addEventListener("open", () => {
+      log("Browser connected to local proxy.", "good");
 
-    function sendBrowserMessage(payload) {
-      ensureBrowserSocket();
+      const shouldAuto = applyUrlParams();
 
-      const sendNow = () => {
-        browserSocket.send(JSON.stringify(payload));
-      };
+      if (shouldAuto) {
+        autoLoginIfReady();
+        setStatus("Connecting...", "connecting");
 
-      if (browserSocket.readyState === WebSocket.OPEN) {
-        sendNow();
-      } else {
-        browserSocket.addEventListener("open", sendNow, { once: true });
+        sendBrowserMessage({
+          type: "connect-ap",
+          apUrl: apUrlEl.value
+        });
+
+        log("Auto-connecting via URL params...", "good");
       }
-    }
+    });
 
-    function sendAp(payload) {
-      sendBrowserMessage({ type: "send-ap", payload });
-    }
+    browserSocket.addEventListener("close", (event) => {
+      clearReconnectTimer();
+      log(`Browser proxy socket closed. Code: ${event.code} Reason: ${event.reason || "none"}`, "bad");
+      setStatus("Disconnected", "bad");
+    });
 
-function populateGameDropdown() {
-  if (!gameNameEl) return;
+    browserSocket.addEventListener("error", () => {
+      setStatus("Proxy socket error", "bad");
+      log("Browser proxy socket error.", "bad");
+    });
 
-  const previousValue = gameNameEl.value;
-  const games = Array.isArray(roomInfo?.games)
-    ? roomInfo.games.filter((game) => game !== "Archipelago")
-    : [];
+    browserSocket.addEventListener("message", (event) => {
+      const msg = JSON.parse(event.data);
 
-  gameNameEl.innerHTML = "";
+      if (msg.type === "ap-open") {
+        clearReconnectTimer();
+        reconnectAttempts = 0;
+        manualDisconnect = false;
+        hasEverConnected = true;
 
-  const placeholder = document.createElement("option");
-  placeholder.value = "";
-  placeholder.textContent = games.length ? "Select a game..." : "Connect to load games...";
-  gameNameEl.appendChild(placeholder);
+        setStatus(`Connected to ${shortUrl(msg.apUrl)}`, "good");
+        log(`Connected to Archipelago socket: ${msg.apUrl}`, "good");
+        playConnectChime();
 
-  for (const game of games) {
-    const option = document.createElement("option");
-    option.value = game;
-    option.textContent = game;
-    gameNameEl.appendChild(option);
-  }
+        sendAp([{ cmd: "GetDataPackage" }]);
+        log("Requested DataPackage.", "good");
 
-  if (previousValue && games.includes(previousValue)) {
-    gameNameEl.value = previousValue;
-  } else if (games.length === 1) {
-    gameNameEl.value = games[0];
-  }
-}
+        if (pendingConnectPayload) {
+          sendAp(pendingConnectPayload);
+          log("Sent pending Connect packet after reconnect.", "good");
+        } else if (isObsConnection()) {
+          log("OBS connection detected. Triggering Send Connect Packet.", "good");
+          document.getElementById("loginBtn")?.click();
+        }
 
-    function renderRoom() {
-      if (!roomInfo) {
-        roomInfoEl.textContent = "No room data yet.";
         return;
       }
 
-      const version = roomInfo.version
-        ? `${roomInfo.version.major ?? "?"}.${roomInfo.version.minor ?? "?"}.${roomInfo.version.build ?? "?"}`
-        : "Unknown";
+      if (msg.type === "ap-close") {
+        setStatus("Disconnected", "bad");
+        log("Disconnected from Archipelago server.", "bad");
 
-      const generatorVersion = roomInfo.generator_version
-        ? `${roomInfo.generator_version.major ?? "?"}.${roomInfo.generator_version.minor ?? "?"}.${roomInfo.generator_version.build ?? "?"}`
-        : "Unknown";
+        if (!manualDisconnect && shouldAutoReconnect && hasEverConnected) {
+          scheduleReconnect();
+        } else {
+          log("Reconnect skipped.", "bad");
+        }
 
-      const tags = Array.isArray(roomInfo.tags) && roomInfo.tags.length
-        ? roomInfo.tags.join(", ")
-        : "None";
+        return;
+      }
 
-      roomInfoEl.innerHTML = `
-        <div><strong>Seed:</strong> ${escapeHtml(roomInfo.seed_name || roomInfo.seed || "Unknown")}</div>
-        <div><strong>Protocol version:</strong> ${escapeHtml(version)}</div>
-        <div><strong>Generator version:</strong> ${escapeHtml(generatorVersion)}</div>
-        <div><strong>Password required:</strong> ${roomInfo.password ? "Yes" : "No"}</div>
-        <div><strong>Hint cost:</strong> ${roomInfo.hint_cost ?? "?"}</div>
-        <div><strong>Location check points:</strong> ${roomInfo.location_check_points ?? "?"}</div>
-        <div><strong>Tags:</strong> ${escapeHtml(tags)}</div>
-      `;
+      if (msg.type === "error") {
+        setStatus("Connection error", "bad");
+        log(msg.message, "bad");
+        return;
+      }
+
+      if (msg.type === "ap-message") {
+        handleApPackets(msg.packets, msg.raw);
+      }
+    });
+  }
+
+  /**
+   * Send the Archipelago Connect packet.
+   *
+   * If already authenticated, this resets state and reconnects first.
+   *
+   * @returns {void}
+   */
+  function sendConnectPacket() {
+    if (!currentUuid) {
+      loadOrCreateUuid();
     }
 
-function getPlayersList() {
-  if (Array.isArray(connected?.players) && connected.players.length) {
-    return connected.players;
+    getAudioCtx();
+    playConnectChime();
+
+    manualDisconnect = false;
+    shouldAutoReconnect = true;
+    clearReconnectTimer();
+
+    const payload = [
+      {
+        cmd: "Connect",
+        game: String(gameNameEl.value || "").trim(),
+        name: slotNameEl.value.trim(),
+        password: passwordEl.value,
+        uuid: currentUuid,
+        version: { major: 0, minor: 6, build: 0, class: "Version" },
+        items_handling: 7,
+        tags: ["Tracker"]
+      }
+    ];
+
+    if (connected) {
+      log("Already authenticated. Reconnecting before switching game/slot...", "bad");
+      pendingConnectPayload = payload;
+      resetSessionState();
+      updateProgressDisplay();
+
+      sendBrowserMessage({ type: "disconnect-ap" });
+
+      setTimeout(() => {
+        const normalizedUrl = normalizeApUrl(apUrlEl.value);
+        apUrlEl.value = normalizedUrl;
+        sendBrowserMessage({
+          type: "connect-ap",
+          apUrl: normalizedUrl
+        });
+      }, 250);
+
+      return;
+    }
+
+    pendingConnectPayload = payload;
+
+    log(`Sending Connect packet with session UUID ${currentUuid}`, "good");
+    log(`Using UUID: ${currentUuid}`, "good");
+    sendAp(payload);
   }
 
-  if (Array.isArray(roomInfo?.players) && roomInfo.players.length) {
-    return roomInfo.players;
+  /**
+   * Prepare auto-login state when URL params provide enough info.
+   *
+   * @returns {void}
+   */
+  function autoLoginIfReady() {
+    const slot = slotNameEl.value.trim();
+    const game = gameNameEl.value.trim();
+
+    if (!slot || !game) {
+      log("Auto-connect skipped: missing slot or game.", "bad");
+      return;
+    }
+
+    pendingConnectPayload = buildConnectPacket();
+    log("Prepared Connect packet for auto-login.", "good");
   }
 
-  if (Array.isArray(roomInfo?.network_players) && roomInfo.network_players.length) {
-    return roomInfo.network_players;
+  /* ==========================================================================
+   * URL PARAM / OBS LINK HELPERS
+   * ========================================================================== */
+
+  /**
+   * Apply URL params to the page inputs.
+   *
+   * @returns {boolean} Whether auto-connect was requested.
+   */
+  function applyUrlParams() {
+    const apUrl = getParam("ap");
+    const slot = getParam("slot");
+    const game = getParam("game");
+    const pass = getParam("pass");
+    const autoconnect = getParam("auto");
+
+    if (apUrl) apUrlEl.value = apUrl;
+    if (slot) slotNameEl.value = slot;
+    if (game) gameNameEl.value = game;
+    if (pass) passwordEl.value = pass;
+
+    return autoconnect === "1" || autoconnect === "true";
   }
 
-  if (connected?.slot_info && typeof connected.slot_info === "object") {
-    return Object.entries(connected.slot_info).map(([slot, info]) => ({
-      slot: Number(slot),
-      name: info?.name || `Slot ${slot}`,
-      alias: info?.alias || info?.name || `Slot ${slot}`,
-      game: info?.game || "",
-      team: info?.team ?? "?"
-    }));
+  /**
+   * Build an OBS browser source URL based on current settings.
+   *
+   * @returns {string}
+   */
+  function buildObsBrowserSourceLink() {
+    const url = new URL(window.location.origin + "/");
+
+    const ap = apUrlEl.value.trim();
+    const slot = slotNameEl.value.trim();
+    const game = gameNameEl.value.trim();
+    const pass = passwordEl.value.trim();
+    const selectedView = obsViewSelectEl?.value || "full";
+
+    if (ap) url.searchParams.set("ap", ap);
+    if (slot) url.searchParams.set("slot", slot);
+    if (game) url.searchParams.set("game", game);
+
+    url.searchParams.set("auto", "1");
+
+    if (obsParamPassEl?.checked && pass) {
+      url.searchParams.set("pass", pass);
+    }
+
+    if (obsParamViewEl?.checked && selectedView && selectedView !== "full") {
+      url.searchParams.set("view", selectedView);
+    }
+
+    return url.toString();
   }
 
-  return [];
-}
+  /* ==========================================================================
+   * PLAYER / GAME LOOKUP HELPERS
+   * ========================================================================== */
 
-function renderPlayers() {
-  const players = getPlayersList();
-  playersEl.innerHTML = "";
+  /**
+   * Return the best available player list.
+   *
+   * @returns {Array<object>}
+   */
+  function getPlayersList() {
+    if (Array.isArray(connected?.players) && connected.players.length) {
+      return connected.players;
+    }
 
-  if (!players.length) {
-    playersEl.innerHTML = `
-      <div class="muted small players-placeholder">
-      Player list will appear after Send Connect Packet succeeds.
+    if (Array.isArray(roomInfo?.players) && roomInfo.players.length) {
+      return roomInfo.players;
+    }
+
+    if (Array.isArray(roomInfo?.network_players) && roomInfo.network_players.length) {
+      return roomInfo.network_players;
+    }
+
+    if (connected?.slot_info && typeof connected.slot_info === "object") {
+      return Object.entries(connected.slot_info).map(([slot, info]) => ({
+        slot: Number(slot),
+        name: info?.name || `Slot ${slot}`,
+        alias: info?.alias || info?.name || `Slot ${slot}`,
+        game: info?.game || "",
+        team: info?.team ?? "?"
+      }));
+    }
+
+    return [];
+  }
+
+  /**
+   * Rebuild the slot -> game lookup map from known players.
+   *
+   * @returns {void}
+   */
+  function rebuildPlayerGameMap() {
+    playerGameMap = new Map();
+
+    const players = getPlayersList();
+    for (const p of players) {
+      if (p && p.slot != null && p.game) {
+        playerGameMap.set(Number(p.slot), p.game);
+      }
+    }
+  }
+
+  /**
+   * Get the current user's game.
+   *
+   * @returns {string|null}
+   */
+  function getOwnGame() {
+    return (
+      gameNameEl.value.trim() ||
+      connected?.slot_info?.[connected?.slot]?.game ||
+      playerGameMap.get(Number(connected?.slot)) ||
+      null
+    );
+  }
+
+  /**
+   * Resolve a game name for a player slot.
+   *
+   * @param {number|string} slot
+   * @returns {string|null}
+   */
+  function getGameForPlayerSlot(slot) {
+    const numericSlot = Number(slot);
+
+    if (Number.isFinite(numericSlot) && playerGameMap.has(numericSlot)) {
+      return playerGameMap.get(numericSlot);
+    }
+
+    if (connected?.slot_info?.[numericSlot]?.game) {
+      return connected.slot_info[numericSlot].game;
+    }
+
+    return getOwnGame();
+  }
+
+  /**
+   * Resolve a player display name from a slot.
+   *
+   * @param {number|string} slot
+   * @returns {string}
+   */
+  function getPlayerName(slot) {
+    const numericSlot = Number(slot);
+    const players = getPlayersList();
+    const player = players.find((p) => Number(p.slot) === numericSlot);
+    return player?.alias || player?.name || `Player ${numericSlot}`;
+  }
+
+  /**
+   * Resolve an item name using the data package.
+   *
+   * @param {number|string} itemId
+   * @param {number|string} playerSlot
+   * @returns {string}
+   */
+  function lookupItemName(itemId, playerSlot) {
+    const game = getGameForPlayerSlot(playerSlot);
+    if (!game) return `Item ${itemId}`;
+
+    const gameData = dataPackage?.games?.[game];
+    const itemIdToName = gameData?.item_name_to_id
+      ? Object.fromEntries(
+          Object.entries(gameData.item_name_to_id).map(([name, id]) => [String(id), name])
+        )
+      : {};
+
+    return itemIdToName[String(itemId)] || `Item ${itemId}`;
+  }
+
+  /**
+   * Resolve a location name using the data package.
+   *
+   * @param {number|string} locationId
+   * @param {number|string} playerSlot
+   * @returns {string}
+   */
+  function lookupLocationName(locationId, playerSlot) {
+    const game = getGameForPlayerSlot(playerSlot);
+    if (!game) return `Location ${locationId}`;
+
+    const gameData = dataPackage?.games?.[game];
+    const locationIdToName = gameData?.location_name_to_id
+      ? Object.fromEntries(
+          Object.entries(gameData.location_name_to_id).map(([name, id]) => [String(id), name])
+        )
+      : {};
+
+    return locationIdToName[String(locationId)] || `Location ${locationId}`;
+  }
+
+  /**
+   * Resolve a display name for a slot, handling system slot 0.
+   *
+   * @param {number|string} slot
+   * @returns {string}
+   */
+  function getPlayerNameBySlot(slot) {
+    if (slot === 0) return "System";
+    return getPlayerName(slot) || `Slot ${slot ?? "?"}`;
+  }
+
+  /* ==========================================================================
+   * HINT HELPERS
+   * ========================================================================== */
+
+  /**
+   * Build a stable dedupe key for a hint.
+   *
+   * @param {object} hint
+   * @returns {string}
+   */
+  function getHintKey(hint) {
+    return [
+      hint.finding_player ?? "",
+      hint.location ?? "",
+      hint.receiving_player ?? "",
+      hint.item ?? ""
+    ].join(":");
+  }
+
+  /**
+   * Decide whether a hint is important to the player.
+   *
+   * @param {object} hint
+   * @returns {boolean}
+   */
+  function isHintImportantToYou(hint) {
+    if (!hint || typeof hint !== "object") return false;
+
+    const flags = Number(hint.flags ?? hint.item_flags ?? NaN);
+
+    if (Number.isFinite(flags)) {
+      return (flags & 1) !== 0 || (flags & 2) !== 0;
+    }
+
+    return hint.important === true;
+  }
+
+  /**
+   * Get a normalized hint status.
+   *
+   * @param {object} hint
+   * @returns {"found"|"unfound"}
+   */
+  function getHintStatus(hint) {
+    if (hint.found === true) return "found";
+    return "unfound";
+  }
+
+  /**
+   * Replace the hints list with a new set.
+   *
+   * @param {Array<object>} newHints
+   * @returns {void}
+   */
+  function setHints(newHints) {
+    hintsState = Array.isArray(newHints) ? [...newHints] : [];
+    renderHints();
+  }
+
+  /**
+   * Merge new hints into state by hint key.
+   *
+   * @param {Array<object>} newHints
+   * @returns {void}
+   */
+  function upsertHints(newHints) {
+    if (!Array.isArray(newHints) || !newHints.length) return;
+
+    const byKey = new Map(hintsState.map((hint) => [getHintKey(hint), hint]));
+
+    for (const hint of newHints) {
+      const key = getHintKey(hint);
+      byKey.set(key, { ...(byKey.get(key) || {}), ...hint });
+    }
+
+    hintsState = Array.from(byKey.values());
+    renderHints();
+  }
+
+  /**
+   * Attempt to extract a hint object from a PrintJSON hint message.
+   *
+   * @param {Array<object>} data
+   * @returns {object|null}
+   */
+  function extractHintFromPrintJson(data) {
+    if (!Array.isArray(data) || !data.length) return null;
+
+    const text = data
+      .map((part) => {
+        if (typeof part?.text === "string") return part.text;
+        return "";
+      })
+      .join("");
+
+    if (!text.startsWith("[Hint]:")) return null;
+
+    const itemMatch = text.match(/\[Hint\]:\s(.+?)\s\[(\d+)\]\sis at\s(.+?)\s\[(\d+)\]\sin\s(.+?)'s World/i);
+    if (!itemMatch) return null;
+
+    const [, rawItemName, rawItemId, rawLocationName, rawLocationId, rawOwnerName] = itemMatch;
+
+    const lower = text.toLowerCase();
+    const found = lower.includes("(found)");
+    const important = lower.includes("(priority)");
+
+    let receivingPlayer = null;
+
+    if (Array.isArray(roomInfo?.players)) {
+      const owner = roomInfo.players.find((p) => p?.alias === rawOwnerName || p?.name === rawOwnerName);
+      if (owner) receivingPlayer = owner.slot;
+    }
+
+    if (receivingPlayer == null && connected?.slot != null) {
+      const myName = slotNameEl?.value?.trim();
+      if (rawOwnerName === myName) {
+        receivingPlayer = connected.slot;
+      }
+    }
+
+    return {
+      item: Number(rawItemId),
+      location: Number(rawLocationId),
+      receiving_player: receivingPlayer,
+      finding_player: receivingPlayer,
+      found,
+      important,
+      _hint_text_item_name: rawItemName,
+      _hint_text_location_name: rawLocationName,
+      _hint_text_owner_name: rawOwnerName
+    };
+  }
+
+  /* ==========================================================================
+   * RENDER HELPERS
+   * ========================================================================== */
+
+  /**
+   * Populate the game dropdown from RoomInfo.
+   *
+   * @returns {void}
+   */
+  function populateGameDropdown() {
+    if (!gameNameEl) return;
+
+    const previousValue = gameNameEl.value;
+    const games = Array.isArray(roomInfo?.games)
+      ? roomInfo.games.filter((game) => game !== "Archipelago")
+      : [];
+
+    gameNameEl.innerHTML = "";
+
+    const placeholder = document.createElement("option");
+    placeholder.value = "";
+    placeholder.textContent = games.length ? "Select a game..." : "Connect to load games...";
+    gameNameEl.appendChild(placeholder);
+
+    for (const game of games) {
+      const option = document.createElement("option");
+      option.value = game;
+      option.textContent = game;
+      gameNameEl.appendChild(option);
+    }
+
+    if (previousValue && games.includes(previousValue)) {
+      gameNameEl.value = previousValue;
+    } else if (games.length === 1) {
+      gameNameEl.value = games[0];
+    }
+  }
+
+  /**
+   * Render room information.
+   *
+   * @returns {void}
+   */
+  function renderRoom() {
+    if (!roomInfo) {
+      roomInfoEl.textContent = "No room data yet.";
+      return;
+    }
+
+    const version = roomInfo.version
+      ? `${roomInfo.version.major ?? "?"}.${roomInfo.version.minor ?? "?"}.${roomInfo.version.build ?? "?"}`
+      : "Unknown";
+
+    const generatorVersion = roomInfo.generator_version
+      ? `${roomInfo.generator_version.major ?? "?"}.${roomInfo.generator_version.minor ?? "?"}.${roomInfo.generator_version.build ?? "?"}`
+      : "Unknown";
+
+    const tags = Array.isArray(roomInfo.tags) && roomInfo.tags.length
+      ? roomInfo.tags.join(", ")
+      : "None";
+
+    roomInfoEl.innerHTML = `
+      <div><strong>Seed:</strong> ${escapeHtml(roomInfo.seed_name || roomInfo.seed || "Unknown")}</div>
+      <div><strong>Protocol version:</strong> ${escapeHtml(version)}</div>
+      <div><strong>Generator version:</strong> ${escapeHtml(generatorVersion)}</div>
+      <div><strong>Password required:</strong> ${roomInfo.password ? "Yes" : "No"}</div>
+      <div><strong>Hint cost:</strong> ${roomInfo.hint_cost ?? "?"}</div>
+      <div><strong>Location check points:</strong> ${roomInfo.location_check_points ?? "?"}</div>
+      <div><strong>Tags:</strong> ${escapeHtml(tags)}</div>
+    `;
+  }
+
+  /**
+   * Render the player list panel.
+   *
+   * @returns {void}
+   */
+  function renderPlayers() {
+    const players = getPlayersList();
+    playersEl.innerHTML = "";
+
+    if (!players.length) {
+      playersEl.innerHTML = `
+        <div class="muted small players-placeholder">
+          Player list will appear after Send Connect Packet succeeds.
+        </div>
+      `;
+      return;
+    }
+
+    for (const p of players) {
+      const div = document.createElement("div");
+      div.className = "item small";
+      div.innerHTML = `
+        <div><strong>${escapeHtml(p.alias || p.name || `Slot ${p.slot}`)}</strong></div>
+        <div class="muted">Team: ${p.team ?? "?"} · Slot: ${p.slot ?? "?"}${p.game ? ` · ${escapeHtml(p.game)}` : ""}</div>
+      `;
+      playersEl.appendChild(div);
+    }
+  }
+
+  /**
+   * Render the session summary card.
+   *
+   * @returns {void}
+   */
+  function renderSession() {
+    if (!connected) {
+      sessionStateEl.innerHTML = "Not authenticated. <br/> Please fill in Slot name and Game name then press send connect packet";
+      return;
+    }
+
+    const checked = (connected.checked_locations || []).length;
+    const missing = (connected.missing_locations || []).length;
+    const total = checked + missing;
+    const percent = total > 0 ? ((checked / total) * 100).toFixed(1) : 0;
+
+    const precollectedCount = receivedItems.filter(
+      (item) => item.location === -2 && item.player === 0
+    ).length;
+
+    const liveReceivedCount = receivedItems.length - precollectedCount;
+
+    sessionStateEl.innerHTML = `
+      <div><strong>Team:</strong> ${connected.team}</div>
+      <div><strong>Slot:</strong> ${connected.slot}</div>
+
+      <div><strong>Checked locations:</strong> ${checked}</div>
+      <div><strong>Missing locations:</strong> ${missing}</div>
+
+      <div>
+        <strong>Progress:</strong> ${percent}%
+        <span class="muted small">(${checked}/${total})</span>
       </div>
+      <div class="progress-bar">
+        <div class="progress-fill" style="width: ${percent}%"></div>
+      </div>
+
+      <div><strong>Precollected items:</strong> ${precollectedCount}</div>
+      <div><strong>Other received items:</strong> ${liveReceivedCount}</div>
     `;
-    return;
   }
 
-  for (const p of players) {
-    const div = document.createElement("div");
-    div.className = "item small";
-    div.innerHTML = `
-      <div><strong>${escapeHtml(p.alias || p.name || `Slot ${p.slot}`)}</strong></div>
-      <div class="muted">Team: ${p.team ?? "?"} · Slot: ${p.slot ?? "?"}${p.game ? ` · ${escapeHtml(p.game)}` : ""}</div>
-    `;
-    playersEl.appendChild(div);
-  }
-}
+  /**
+   * Render the received items list.
+   *
+   * @returns {void}
+   */
+  function renderItems() {
+    itemsEl.innerHTML = "";
 
-function renderSession() {
-  if (!connected) {
-    sessionStateEl.innerHTML = "Not authenticated. <br/> Please fill in Slot name and Game name then press send connect packet";
-    return;
-  }
+    if (!receivedItems.length) {
+      itemsEl.innerHTML = '<div class="muted small">No received items yet.</div>';
+      return;
+    }
 
-  const checked = (connected.checked_locations || []).length;
-  const missing = (connected.missing_locations || []).length;
-  const total = checked + missing;
+    for (const item of receivedItems) {
+      const div = document.createElement("div");
+      div.className = "item small";
 
-  const percent = total > 0
-    ? ((checked / total) * 100).toFixed(1)
-    : 0;
+      const itemLookupSlot = connected?.slot;
+      const locationLookupSlot =
+        item.player === 0 || item.player == null ? connected?.slot : item.player;
 
-  const precollectedCount = receivedItems.filter(
-    (item) => item.location === -2 && item.player === 0
-  ).length;
+      const itemName = lookupItemName(item.item, itemLookupSlot);
 
-  const liveReceivedCount = receivedItems.length - precollectedCount;
+      let sourceLine = "";
+      if (item.location === -2 && item.player === 0) {
+        sourceLine = `<div class="muted">Source: Start inventory / precollected</div>`;
+      } else {
+        const locationName = lookupLocationName(item.location, locationLookupSlot);
+        sourceLine = `<div class="muted">Location: ${escapeHtml(locationName)} [${item.location ?? "?"}]</div>`;
+      }
 
-  sessionStateEl.innerHTML = `
-    <div><strong>Team:</strong> ${connected.team}</div>
-    <div><strong>Slot:</strong> ${connected.slot}</div>
+      let fromLine = "";
+      if (item.player === 0) {
+        fromLine = `<div class="muted">From: System</div>`;
+      } else {
+        const playerName = getPlayerName(item.player);
+        fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
+      }
 
-    <div><strong>Checked locations:</strong> ${checked}</div>
-    <div><strong>Missing locations:</strong> ${missing}</div>
+      div.innerHTML = `
+        <div><strong>${escapeHtml(itemName)}</strong> <span class="muted">[${item.item ?? "?"}]</span></div>
+        ${sourceLine}
+        ${fromLine}
+      `;
 
-    <div>
-      <strong>Progress:</strong> ${percent}% 
-      <span class="muted small">(${checked}/${total})</span>
-    </div>
-	<div class="progress-bar">
-  <div class="progress-fill" style="width: ${percent}%"></div>
-</div>
-
-    <div><strong>Precollected items:</strong> ${precollectedCount}</div>
-    <div><strong>Other received items:</strong> ${liveReceivedCount}</div>
-  `;
-}
-
-function renderItems() {
-  itemsEl.innerHTML = "";
-
-  if (!receivedItems.length) {
-    itemsEl.innerHTML = '<div class="muted small">No received items yet.</div>';
-    return;
+      itemsEl.appendChild(div);
+    }
   }
 
-  for (const item of receivedItems) {
-    const div = document.createElement("div");
-    div.className = "item small";
+  /**
+   * Render the latest acquired item summary.
+   *
+   * @param {object|null} [item=null]
+   * @returns {void}
+   */
+  function renderLatestItem(item = null) {
+    if (!latestItemEl) return;
 
-    // Item names should resolve in YOUR game
+    if (!item) {
+      latestItemEl.className = "latest-item muted small";
+      latestItemEl.innerHTML = "No items yet.";
+      return;
+    }
+
     const itemLookupSlot = connected?.slot;
-
-    // Location names should resolve in the SENDER'S game
     const locationLookupSlot =
       item.player === 0 || item.player == null ? connected?.slot : item.player;
 
@@ -2685,79 +2723,399 @@ function renderItems() {
     }
 
     let fromLine = "";
-if (item.player === 0) {
-  fromLine = `<div class="muted">From: System</div>`;
-} else {
-  const playerName = getPlayerName(item.player);
-  fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
-}
+    if (item.player === 0) {
+      fromLine = `<div class="muted">From: System</div>`;
+    } else {
+      const playerName = getPlayerName(item.player);
+      fromLine = `<div class="muted">From player slot: ${item.player ?? "?"} (${escapeHtml(playerName)})</div>`;
+    }
 
-    div.innerHTML = `
+    latestItemEl.className = "latest-item small";
+    latestItemEl.innerHTML = `
       <div><strong>${escapeHtml(itemName)}</strong> <span class="muted">[${item.item ?? "?"}]</span></div>
       ${sourceLine}
       ${fromLine}
     `;
-
-    itemsEl.appendChild(div);
-  }
-}
-
-function extractHintFromPrintJson(data) {
-  if (!Array.isArray(data) || !data.length) return null;
-
-  const text = data
-    .map((part) => {
-      if (typeof part?.text === "string") return part.text;
-      return "";
-    })
-    .join("");
-
-  if (!text.startsWith("[Hint]:")) return null;
-
-  // Example:
-  // [Hint]: IssyWind's Progressive Bow [2322489] is at Forsaken Fortress - Phantom Ganon [2326642] in IssyWind's World. (found)
-  // [Hint]: IssyWind's Progressive Bow [2322489] is at Tower of the Gods - Big Key Chest [2326639] in IssyWind's World at Tower of the Gods Sector. (priority)
-
-  const itemMatch = text.match(/\[Hint\]:\s(.+?)\s\[(\d+)\]\sis at\s(.+?)\s\[(\d+)\]\sin\s(.+?)'s World/i);
-  if (!itemMatch) return null;
-
-  const [, rawItemName, rawItemId, rawLocationName, rawLocationId, rawOwnerName] = itemMatch;
-
-  const lower = text.toLowerCase();
-
-  let found = false;
-  if (lower.includes("(found)")) found = true;
-
-  const important = lower.includes("(priority)");
-
-  // Try to resolve owner slot from player list
-  let receivingPlayer = null;
-  if (Array.isArray(roomInfo?.players)) {
-    const owner = roomInfo.players.find((p) => p?.alias === rawOwnerName || p?.name === rawOwnerName);
-    if (owner) receivingPlayer = owner.slot;
   }
 
-  // fallback: if the owner name is us, use our slot
-  if (receivingPlayer == null && connected?.slot != null) {
-    const myName = slotNameEl?.value?.trim();
-    if (rawOwnerName === myName) {
-      receivingPlayer = connected.slot;
+  /**
+   * Replay the latest-item highlight animation.
+   *
+   * @returns {void}
+   */
+  function flashLatestItem() {
+    if (!latestItemEl) return;
+
+    latestItemEl.classList.remove("latest-item-flash");
+    void latestItemEl.offsetWidth;
+    latestItemEl.classList.add("latest-item-flash");
+  }
+
+  /**
+   * Render the hints panel.
+   *
+   * @returns {void}
+   */
+  function renderHints() {
+    if (!hintsEl) return;
+
+    hintsEl.innerHTML = "";
+
+    if (!hintsState.length) {
+      hintsEl.innerHTML = '<div class="muted small">No active hints yet.</div>';
+      if (hintsSummaryEl) hintsSummaryEl.textContent = "No hints yet.";
+      return;
+    }
+
+    const myImportantCount = hintsState.filter(isHintImportantToYou).length;
+    const foundCount = hintsState.filter((hint) => getHintStatus(hint) === "found").length;
+    const visibleHints = hideFoundHints
+      ? hintsState.filter((hint) => getHintStatus(hint) !== "found")
+      : hintsState;
+
+    if (hintsSummaryEl) {
+      const hiddenText = hideFoundHints ? ` • showing ${visibleHints.length}` : "";
+      hintsSummaryEl.textContent =
+        `${hintsState.length} hint(s) • ${foundCount} found • ${myImportantCount} important${hiddenText}`;
+    }
+
+    if (!visibleHints.length) {
+      hintsEl.innerHTML = '<div class="muted small">No unfound hints to show.</div>';
+      return;
+    }
+
+    const sortedHints = [...visibleHints].sort((a, b) => {
+      const aFound = getHintStatus(a) === "found" ? 1 : 0;
+      const bFound = getHintStatus(b) === "found" ? 1 : 0;
+      if (aFound !== bFound) return aFound - bFound;
+
+      const aImportant = isHintImportantToYou(a) ? 1 : 0;
+      const bImportant = isHintImportantToYou(b) ? 1 : 0;
+      if (aImportant !== bImportant) return bImportant - aImportant;
+
+      return 0;
+    });
+
+    for (const hint of sortedHints) {
+      const div = document.createElement("div");
+
+      const important = isHintImportantToYou(hint);
+      const status = getHintStatus(hint);
+
+      const locationGameSlot = hint.finding_player ?? connected?.slot;
+      const itemGameSlot = hint.receiving_player ?? connected?.slot;
+
+      const locationName =
+        hint._hint_text_location_name ||
+        lookupLocationName(hint.location, locationGameSlot);
+
+      const itemName =
+        hint._hint_text_item_name ||
+        lookupItemName(hint.item, itemGameSlot);
+
+      const finderName =
+        hint._hint_text_owner_name ||
+        getPlayerName(hint.finding_player) ||
+        `Slot ${hint.finding_player ?? "?"}`;
+
+      const receiverName =
+        hint._hint_text_owner_name ||
+        getPlayerName(hint.receiving_player) ||
+        `Slot ${hint.receiving_player ?? "?"}`;
+
+      const importantBadge = important
+        ? '<span class="hint-badge hint-badge-important">Important</span>'
+        : "";
+
+      div.className = `hint-item hint-${status}${important ? " hint-important" : ""}`;
+
+      div.innerHTML = `
+        <div class="hint-head">
+          <div class="hint-title">${escapeHtml(String(itemName ?? "Unknown item"))}</div>
+          <div class="hint-badges">
+            <span class="hint-badge hint-badge-${status}">
+              ${status === "found" ? "Found" : "Unfound"}
+            </span>
+            ${importantBadge}
+          </div>
+        </div>
+
+        <div class="hint-meta">
+          <div><strong>Location:</strong> ${escapeHtml(String(locationName ?? "Unknown location"))}</div>
+          <div><strong>Found by:</strong> ${escapeHtml(String(finderName))}</div>
+          <div><strong>For:</strong> ${escapeHtml(String(receiverName))}</div>
+          <div class="muted-line">Location ID: ${escapeHtml(String(hint.location ?? "?"))} • Item ID: ${escapeHtml(String(hint.item ?? "?"))}</div>
+        </div>
+      `;
+
+      hintsEl.appendChild(div);
     }
   }
 
-  return {
-    item: Number(rawItemId),
-    location: Number(rawLocationId),
-    receiving_player: receivingPlayer,
-    finding_player: receivingPlayer,
-    found,
-    important,
-    _hint_text_item_name: rawItemName,
-    _hint_text_location_name: rawLocationName,
-    _hint_text_owner_name: rawOwnerName
-  };
-}
+  /**
+   * Update the optional standalone progress overlay elements.
+   *
+   * Safe to call even when those elements are missing.
+   *
+   * @returns {void}
+   */
+  function updateProgressDisplay() {
+    if (!progressFillEl || !progressTextEl || !connected) return;
 
+    const checked = Number(connected?.checked_locations?.length || 0);
+    const total = Number(connected?.missing_locations?.length || 0) + checked;
+    const percent = total > 0 ? (checked / total) * 100 : 0;
+
+    progressTextEl.textContent = `${checked} / ${total} checks`;
+    progressFillEl.style.width = `${percent.toFixed(1)}%`;
+
+    progressFillEl.classList.remove("bump");
+    void progressFillEl.offsetWidth;
+    progressFillEl.classList.add("bump");
+
+    setTimeout(() => {
+      progressFillEl.classList.remove("bump");
+    }, 220);
+  }
+
+  /* ==========================================================================
+   * ITEM / TOAST HELPERS
+   * ========================================================================== */
+
+  /**
+   * Convert PrintJSON parts to a readable string with names resolved.
+   *
+   * @param {Array<object>} parts
+   * @returns {string}
+   */
+  function formatPrintJson(parts) {
+    if (!Array.isArray(parts)) return String(parts ?? "");
+
+    return parts.map((part) => {
+      if (!part || typeof part !== "object") {
+        return String(part ?? "");
+      }
+
+      if (part.type === "item_id") {
+        const itemId = Number(part.text);
+        const playerSlot =
+          part.player === 0 || part.player == null ? connected?.slot : part.player;
+
+        return `${lookupItemName(itemId, playerSlot)} [${itemId}]`;
+      }
+
+      if (part.type === "location_id") {
+        const locationId = Number(part.text);
+        const playerSlot =
+          part.player === 0 || part.player == null ? connected?.slot : part.player;
+
+        return `${lookupLocationName(locationId, playerSlot)} [${locationId}]`;
+      }
+
+      if (part.type === "player_id") {
+        const slot = Number(part.text);
+        const players = connected?.players || roomInfo?.players || [];
+        const player = players.find((p) => Number(p.slot) === slot);
+        return player?.alias || player?.name || `Player ${slot}`;
+      }
+
+      return part.text ?? "";
+    }).join("");
+  }
+
+  /**
+   * Classify an item using Archipelago item flags.
+   *
+   * @param {object} item
+   * @returns {{key: string, label: string}}
+   */
+  function getItemClassification(item) {
+    const flags = Number(item?.flags ?? 0);
+
+    if (flags & 4) {
+      return { key: "trap", label: "Trap" };
+    }
+
+    if (flags & 1) {
+      return { key: "progression", label: "Progression" };
+    }
+
+    if (flags & 2) {
+      return { key: "useful", label: "Useful" };
+    }
+
+    return { key: "filler", label: "Filler" };
+  }
+
+  /**
+   * Show an OBS item toast in item-alert mode.
+   *
+   * @param {object} item
+   * @returns {void}
+   */
+  function showObsItemToast(item) {
+    if (!isAutoMode || !obsToastLayerEl) return;
+    if (currentView !== "item-alert") return;
+    if (item.location === -2 && item.player === 0) return;
+
+    const classification = getItemClassification(item);
+
+    const itemLookupSlot = connected?.slot;
+    const itemName = lookupItemName(item.item, itemLookupSlot);
+
+    const senderName = getPlayerNameBySlot(item.player);
+    const receiverName = getPlayerNameBySlot(connected?.slot);
+
+    const toast = document.createElement("div");
+    toast.className = `obs-toast obs-toast-${classification.key}`;
+
+    toast.innerHTML = `
+      <div class="obs-toast-header">
+        <div class="obs-toast-title">${escapeHtml(itemName)}</div>
+        <div class="obs-toast-badge">${escapeHtml(classification.label)}</div>
+      </div>
+      <div class="obs-toast-meta">
+        <div><strong>From:</strong> ${escapeHtml(senderName)}</div>
+        <div><strong>To:</strong> ${escapeHtml(receiverName)}</div>
+        <div class="muted-line">Item ID: ${escapeHtml(item.item ?? "?")}</div>
+      </div>
+    `;
+
+    obsToastLayerEl.appendChild(toast);
+    playToastSound(classification.key);
+
+    const removeToast = () => {
+      toast.classList.add("hide");
+      setTimeout(() => toast.remove(), 220);
+    };
+
+    setTimeout(removeToast, 3800);
+  }
+
+  /* ==========================================================================
+   * VIEW MODE / OBS LAYOUT HELPERS
+   * ========================================================================== */
+
+  /**
+   * Apply OBS overlay view layout rules.
+   *
+   * @returns {void}
+   */
+  function applyViewMode() {
+    const view = currentView;
+
+    document.body.classList.remove(
+      "obs-mode",
+      "view-progress",
+      "view-log",
+      "view-compact",
+      "view-item-alert"
+    );
+
+    if (!["progress", "log", "compact", "item-alert"].includes(view)) {
+      return;
+    }
+
+    document.body.classList.add("obs-mode", `view-${view}`);
+
+    connectionCardEl?.classList.add("hidden");
+    logCardEl?.classList.add("hidden");
+    sessionCardEl?.classList.add("hidden");
+    hintsCardEl?.classList.add("hidden");
+
+    document.querySelector(".topbar")?.classList.add("hidden");
+
+    const sessionHeader = sessionStateEl?.parentElement;
+    if (sessionHeader) sessionHeader.classList.remove("hidden");
+
+    itemsEl?.classList.remove("hidden");
+
+    const itemsSection = document.querySelector(".items-section");
+    itemsSection?.classList.remove("hidden");
+
+    if (itemsSection) {
+      const headings = itemsSection.querySelectorAll("h2");
+      headings.forEach((h) => h.classList.remove("hidden"));
+    }
+
+    if (view === "progress") {
+      sessionCardEl?.classList.remove("hidden");
+      if (sessionHeader) sessionHeader.classList.add("hidden");
+      itemsSection?.classList.add("hidden");
+    }
+
+    if (view === "log") {
+      logCardEl?.classList.remove("hidden");
+    }
+
+    if (view === "compact") {
+      sessionCardEl?.classList.remove("hidden");
+      if (sessionHeader) sessionHeader.classList.add("hidden");
+
+      itemsEl?.classList.add("hidden");
+
+      if (itemsSection) {
+        const headings = itemsSection.querySelectorAll("h2");
+        if (headings[1]) headings[1].classList.add("hidden");
+      }
+    }
+  }
+
+  /**
+   * Apply auto/OBS mode hiding rules.
+   *
+   * @returns {void}
+   */
+  function applyAutoMode() {
+    if (!isAutoMode) return;
+
+    connectionCardEl?.classList.add("hidden");
+    document.querySelector(".players-section")?.classList.add("hidden");
+    document.querySelector("#roomInfo")?.closest("div")?.classList.add("hidden");
+    document.querySelector("#chatInput")?.closest("div")?.classList.add("hidden");
+    document.querySelector("#obsLinkOutput")?.closest("div")?.classList.add("hidden");
+    document.querySelector(".topbar")?.classList.add("hidden");
+  }
+
+  /* ==========================================================================
+   * SESSION RESET
+   * ========================================================================== */
+
+  /**
+   * Clear all session-derived state and re-render blank UI.
+   *
+   * @returns {void}
+   */
+  function resetSessionState() {
+    roomInfo = null;
+    connected = null;
+    receivedItems = [];
+    dataPackage = {};
+    playerGameMap = new Map();
+
+    hintsState = [];
+    lastHintIds = new Set();
+
+    renderRoom();
+    renderPlayers();
+    renderSession();
+    renderItems();
+    renderLatestItem();
+    renderHints();
+    updateProgressDisplay();
+  }
+
+  /* ==========================================================================
+   * AP PACKET HANDLER
+   * ========================================================================== */
+
+  /**
+   * Handle packets received from the Archipelago socket.
+   *
+   * @param {object|Array<object>|null} packets
+   * @param {string} raw
+   * @returns {void}
+   */
   function handleApPackets(packets, raw) {
     if (!packets) {
       log(`Raw: ${raw}`);
@@ -2769,92 +3127,85 @@ function extractHintFromPrintJson(data) {
     }
 
     for (const packet of packets) {
-const cmd = packet.cmd || "Unknown";
+      const cmd = packet.cmd || "Unknown";
 
-if (cmd === "Bounced" && !showBounced) {
-  return; // completely hide bounced packets
-}
+      if (cmd === "Bounced" && !showBounced) {
+        return;
+      }
 
-log(`Packet: ${cmd}`);
+      log(`Packet: ${cmd}`);
 
-if (cmd === "RoomInfo") {
-  roomInfo = packet;
-  populateGameDropdown();
-  rebuildPlayerGameMap();
-  renderRoom();
-  renderPlayers();
-  log(`RoomInfo fields: ${Object.keys(packet).join(", ")}`, "good");
-  log("RoomInfo received ✔", "good");
-}
+      if (cmd === "RoomInfo") {
+        roomInfo = packet;
+        populateGameDropdown();
+        rebuildPlayerGameMap();
+        renderRoom();
+        renderPlayers();
+        log(`RoomInfo fields: ${Object.keys(packet).join(", ")}`, "good");
+        log("RoomInfo received ✔", "good");
+      }
 
-if (cmd === "Connected") {
-  connected = packet;
-  rebuildPlayerGameMap();
-  renderPlayers();
-  renderSession();
-  updateProgressDisplay();
-  renderHints();
-  log(`Connected fields: ${Object.keys(packet).join(", ")}`, "good");
-  log(`Authenticated as slot ${packet.slot} on team ${packet.team}.`, "good");
+      if (cmd === "Connected") {
+        connected = packet;
+        rebuildPlayerGameMap();
+        renderPlayers();
+        renderSession();
+        updateProgressDisplay();
+        renderHints();
+        log(`Connected fields: ${Object.keys(packet).join(", ")}`, "good");
+        log(`Authenticated as slot ${packet.slot} on team ${packet.team}.`, "good");
 
-const hintKey = `_read_hints_${packet.team}_${packet.slot}`;
+        const hintKey = `_read_hints_${packet.team}_${packet.slot}`;
+        log(`Requesting stored hints from server using key: ${hintKey}`, "good");
 
-log(`Requesting stored hints from server using key: ${hintKey}`, "good");
+        sendBrowserMessage({
+          type: "send-ap",
+          payload: [
+            {
+              cmd: "Get",
+              keys: [hintKey]
+            },
+            {
+              cmd: "SetNotify",
+              keys: [hintKey]
+            }
+          ]
+        });
+      }
 
-sendBrowserMessage({
-  type: "send-ap",
-  payload: [
-    {
-      cmd: "Get",
-      keys: [hintKey]
-    },
-    {
-      cmd: "SetNotify",
-      keys: [hintKey]
-    }
-  ]
-});
+      if (cmd === "Retrieved") {
+        const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
 
+        if (
+          hintKey &&
+          packet.keys &&
+          Object.prototype.hasOwnProperty.call(packet.keys, hintKey)
+        ) {
+          const hints = Array.isArray(packet.keys[hintKey])
+            ? packet.keys[hintKey]
+            : [];
 
-}
+          setHints(hints);
+          log(`Retrieved ${hints.length} hint(s).`, "good");
+        }
+      }
 
-if (cmd === "Retrieved") {
-  const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
+      if (cmd === "SetReply") {
+        log(`SetReply packet: ${JSON.stringify(packet)}`);
 
-  if (
-    hintKey &&
-    packet.keys &&
-    Object.prototype.hasOwnProperty.call(packet.keys, hintKey)
-  ) {
-    const hints = Array.isArray(packet.keys[hintKey])
-      ? packet.keys[hintKey]
-      : [];
+        const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
 
-    setHints(hints);
-    log(`Retrieved ${hints.length} hint(s).`, "good");
-  }
-}
+        if (hintKey && packet.key === hintKey) {
+          const hints = Array.isArray(packet.value) ? packet.value : [];
+          setHints(hints);
+          log(`Hint list updated (${hints.length} hint(s)).`, "good");
+        }
+      }
 
-if (cmd === "SetReply") {
-  log(`SetReply packet: ${JSON.stringify(packet)}`);
-
-  const hintKey = connected ? `_read_hints_${connected.team}_${connected.slot}` : null;
-
-  if (hintKey && packet.key === hintKey) {
-    const hints = Array.isArray(packet.value)
-      ? packet.value
-      : [];
-
-    setHints(hints);
-    log(`Hint list updated (${hints.length} hint(s)).`, "good");
-  }
-}
-
-if (cmd === "Bounced") {
-  if (!showBounced) return;
-
-  log(`Bounced: ${JSON.stringify(packet.data ?? {})}`);
-}
+      if (cmd === "Bounced") {
+        if (!showBounced) return;
+        log(`Bounced: ${JSON.stringify(packet.data ?? {})}`);
+      }
 
       if (cmd === "DataPackage") {
         dataPackage = packet.data || {};
@@ -2865,58 +3216,58 @@ if (cmd === "Bounced") {
         log(`Connection refused: ${(packet.errors || []).join(", ") || "Unknown reason"}`, "bad");
       }
 
-if (cmd === "ReceivedItems") {
-  const newItems = Array.isArray(packet.items) ? packet.items : [];
+      if (cmd === "ReceivedItems") {
+        const newItems = Array.isArray(packet.items) ? packet.items : [];
 
-  for (const item of newItems) {
-    receivedItems.push(item);
-    renderLatestItem(item);
-    flashLatestItem();
-    showObsItemToast(item);
-  }
+        for (const item of newItems) {
+          receivedItems.push(item);
+          renderLatestItem(item);
+          flashLatestItem();
+          showObsItemToast(item);
+        }
 
-  renderItems();
-  renderSession();
-  updateProgressDisplay();
-  log(`Received ${newItems.length} item(s).`, "good");
-}
+        renderItems();
+        renderSession();
+        updateProgressDisplay();
+        log(`Received ${newItems.length} item(s).`, "good");
+      }
 
       if (cmd === "Print") {
         log(packet.text || "[Print packet]");
       }
 
-if (cmd === "PrintJSON") {
-  const rendered = formatPrintJson(packet.data || []);
-  log(rendered || JSON.stringify(packet.data || packet, null, 2));
+      if (cmd === "PrintJSON") {
+        const rendered = formatPrintJson(packet.data || []);
+        log(rendered || JSON.stringify(packet.data || packet, null, 2));
 
-  const parsedHint = extractHintFromPrintJson(packet.data || []);
-  if (parsedHint) {
-    setHints([parsedHint]);
-    log("Hint added to hints panel from PrintJSON.", "good");
-  }
-}
+        const parsedHint = extractHintFromPrintJson(packet.data || []);
+        if (parsedHint) {
+          upsertHints([parsedHint]);
+          log("Hint added to hints panel from PrintJSON.", "good");
+        }
+      }
 
-if (cmd === "RoomUpdate") {
-  const next = { ...(connected || {}), ...packet };
+      if (cmd === "RoomUpdate") {
+        const next = { ...(connected || {}), ...packet };
 
-  if (Array.isArray(packet.checked_locations)) {
-    const prevChecked = Array.isArray(connected?.checked_locations)
-      ? connected.checked_locations
-      : [];
+        if (Array.isArray(packet.checked_locations)) {
+          const prevChecked = Array.isArray(connected?.checked_locations)
+            ? connected.checked_locations
+            : [];
 
-    next.checked_locations = [...new Set([...prevChecked, ...packet.checked_locations])];
-  }
+          next.checked_locations = [...new Set([...prevChecked, ...packet.checked_locations])];
+        }
 
-  if (!Array.isArray(packet.missing_locations) && Array.isArray(connected?.missing_locations)) {
-    next.missing_locations = connected.missing_locations;
-  }
+        if (!Array.isArray(packet.missing_locations) && Array.isArray(connected?.missing_locations)) {
+          next.missing_locations = connected.missing_locations;
+        }
 
-  connected = next;
-  rebuildPlayerGameMap();
-  renderPlayers();
-  renderSession();
-  updateProgressDisplay();
-}
+        connected = next;
+        rebuildPlayerGameMap();
+        renderPlayers();
+        renderSession();
+        updateProgressDisplay();
+      }
 
       if (cmd === "InvalidPacket") {
         log(`Invalid packet (${packet.type} / ${packet.original_cmd}): ${packet.text}`, "bad");
@@ -2924,272 +3275,172 @@ if (cmd === "RoomUpdate") {
     }
   }
 
-function getItemClassification(item) {
-  const flags = Number(item?.flags ?? 0);
+  /* ==========================================================================
+   * UI EVENT WIRING
+   * ========================================================================== */
 
-  if (flags & 4) {
-    return { key: "trap", label: "Trap" };
+  if (toggleHideFoundHintsEl) {
+    toggleHideFoundHintsEl.checked = hideFoundHints;
+    toggleHideFoundHintsEl.addEventListener("change", () => {
+      hideFoundHints = toggleHideFoundHintsEl.checked;
+      localStorage.setItem("hideFoundHints", String(hideFoundHints));
+      renderHints();
+    });
   }
 
-  if (flags & 1) {
-    return { key: "progression", label: "Progression" };
+  if (toggleBouncedEl) {
+    toggleBouncedEl.checked = showBounced;
+    toggleBouncedEl.addEventListener("change", () => {
+      showBounced = toggleBouncedEl.checked;
+      localStorage.setItem("showBounced", String(showBounced));
+    });
   }
 
-  if (flags & 2) {
-    return { key: "useful", label: "Useful" };
+  if (volumeSlider && volumeLabel) {
+    volumeSlider.value = volumeLevel;
+    volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+
+    volumeSlider.addEventListener("input", () => {
+      volumeLevel = parseFloat(volumeSlider.value);
+      localStorage.setItem("volume", volumeLevel);
+      volumeLabel.textContent = Math.round(volumeLevel * 100) + "%";
+    });
   }
 
-  return { key: "filler", label: "Filler" };
-}
-
-function getPlayerNameBySlot(slot) {
-  if (slot === 0) return "System";
-  return getPlayerName(slot) || `Slot ${slot ?? "?"}`;
-}
-
-function playToastSound(classificationKey) {
-
-  if (classificationKey === "trap") {
-    playTone({ frequency: 240, type: "sawtooth", duration: 0.12, volume: 0.028, delay: 0.00 });
-    playTone({ frequency: 180, type: "triangle", duration: 0.18, volume: 0.018, delay: 0.05 });
-    return;
+  if (generateObsLinkBtn && obsLinkOutputEl) {
+    generateObsLinkBtn.addEventListener("click", () => {
+      const link = buildObsBrowserSourceLink();
+      obsLinkOutputEl.value = link;
+      log("Generated OBS browser source link.", "good");
+    });
   }
 
-  if (classificationKey === "progression") {
-    playTone({ frequency: 987.77, type: "sine", duration: 0.10, volume: 0.028, delay: 0.00 });
-    playTone({ frequency: 1318.51, type: "sine", duration: 0.12, volume: 0.022, delay: 0.05 });
-    playTone({ frequency: 1567.98, type: "sine", duration: 0.14, volume: 0.018, delay: 0.10 });
-    return;
+  if (copyObsLinkBtn && obsLinkOutputEl) {
+    copyObsLinkBtn.addEventListener("click", async () => {
+      const link = buildObsBrowserSourceLink();
+      obsLinkOutputEl.value = link;
+
+      try {
+        await navigator.clipboard.writeText(link);
+        log("Copied OBS browser source link to clipboard.", "good");
+      } catch {
+        log("Could not copy OBS link automatically. Copy it from the box instead.", "bad");
+      }
+    });
   }
 
-  if (classificationKey === "useful") {
-    playTone({ frequency: 880, type: "sine", duration: 0.09, volume: 0.024, delay: 0.00 });
-    playTone({ frequency: 1174.66, type: "sine", duration: 0.08, volume: 0.018, delay: 0.04 });
-    return;
+  if (obsParamToggleBtn && obsParamMenu) {
+    obsParamToggleBtn.addEventListener("click", () => {
+      obsParamMenu.classList.toggle("hidden");
+      obsParamToggleBtn.textContent = obsParamMenu.classList.contains("hidden")
+        ? "OBS Link Options ▼"
+        : "OBS Link Options ▲";
+    });
+
+    document.addEventListener("click", (event) => {
+      if (!obsParamMenu.contains(event.target) && !obsParamToggleBtn.contains(event.target)) {
+        obsParamMenu.classList.add("hidden");
+        obsParamToggleBtn.textContent = "OBS Link Options ▼";
+      }
+    });
   }
 
-  playItemPing();
-}
+  document.getElementById("connectBtn")?.addEventListener("click", () => {
+    getAudioCtx();
+    playConnectChime();
 
-function showObsItemToast(item) {
-  if (!isAutoMode || !obsToastLayerEl) return;
-  if (currentView !== "item-alert") return;
-  if (item.location === -2 && item.player === 0) return;
+    clearReconnectTimer();
+    manualDisconnect = false;
+    shouldAutoReconnect = true;
+    reconnectAttempts = 0;
+    hasEverConnected = false;
 
-  const classification = getItemClassification(item);
+    const normalizedUrl = normalizeApUrl(apUrlEl.value);
+    apUrlEl.value = normalizedUrl;
 
-  const itemLookupSlot = connected?.slot;
-  const itemName = lookupItemName(item.item, itemLookupSlot);
+    saveLastApUrl(normalizedUrl);
 
-  const senderName = getPlayerNameBySlot(item.player);
-  const receiverName = getPlayerNameBySlot(connected?.slot);
+    setStatus(`Connecting to ${shortUrl(normalizedUrl)}...`, "connecting");
+    log(`Connecting to Archipelago socket: ${normalizedUrl}`, "good");
 
-  const toast = document.createElement("div");
-  toast.className = `obs-toast obs-toast-${classification.key}`;
-
-  toast.innerHTML = `
-    <div class="obs-toast-header">
-      <div class="obs-toast-title">${escapeHtml(itemName)}</div>
-      <div class="obs-toast-badge">${escapeHtml(classification.label)}</div>
-    </div>
-    <div class="obs-toast-meta">
-      <div><strong>From:</strong> ${escapeHtml(senderName)}</div>
-      <div><strong>To:</strong> ${escapeHtml(receiverName)}</div>
-      <div class="muted-line">Item ID: ${escapeHtml(item.item ?? "?")}</div>
-    </div>
-  `;
-
-  obsToastLayerEl.appendChild(toast);
-  playToastSound(classification.key);
-
-  const removeToast = () => {
-    toast.classList.add("hide");
-    setTimeout(() => {
-      toast.remove();
-    }, 220);
-  };
-
-  setTimeout(removeToast, 3800);
-}
-
-function updateProgressDisplay() {
-  if (!progressFillEl || !progressTextEl) return;
-  if (!connected) return;
-
-  const checked = Number(connected?.checked_locations?.length || 0);
-  const total = Number(connected?.missing_locations?.length || 0) + checked;
-  const percent = total > 0 ? (checked / total) * 100 : 0;
-
-  progressTextEl.textContent = `${checked} / ${total} checks`;
-
-  // update bar
-  progressFillEl.style.width = `${percent.toFixed(1)}%`;
-
-  // 👇 ADD THIS BLOCK HERE
-  progressFillEl.classList.remove("bump");
-  void progressFillEl.offsetWidth;
-  progressFillEl.classList.add("bump");
-
-  setTimeout(() => {
-    progressFillEl.classList.remove("bump");
-  }, 220);
-}
-
-function normalizeApUrl(url) {
-  url = String(url || "").trim();
-
-  // If no protocol at all → default to wss://
-  if (!/^wss?:\/\//i.test(url)) {
-    url = "wss://" + url;
-  }
-
-  // If user typed ws://archipelago.gg → upgrade to wss://
-  if (/^ws:\/\/archipelago\.gg(?::\d+)?$/i.test(url)) {
-    url = url.replace(/^ws:\/\//i, "wss://");
-  }
-
-  return url;
-}
-
-document.getElementById("connectBtn").addEventListener("click", () => {
-  audioDebug("Connect button clicked", "good");
-  getAudioCtx();
-  playConnectChime();
-
-  clearReconnectTimer();
-  manualDisconnect = false;
-  shouldAutoReconnect = true;
-  reconnectAttempts = 0;
-  hasEverConnected = false;
-
-  const normalizedUrl = normalizeApUrl(apUrlEl.value);
-  apUrlEl.value = normalizedUrl;
-
-  saveLastApUrl(normalizedUrl);
-
-  setStatus(`Connecting to ${shortUrl(normalizedUrl)}...`, "connecting");
-  log(`Connecting to Archipelago socket: ${normalizedUrl}`, "good");
-
-  sendBrowserMessage({
-    type: "connect-ap",
-    apUrl: normalizedUrl
+    sendBrowserMessage({
+      type: "connect-ap",
+      apUrl: normalizedUrl
+    });
   });
-});
 
-function sendConnectPacket() {
-  audioDebug("Send Connect Packet clicked", "good");
+  document.getElementById("disconnectBtn")?.addEventListener("click", () => {
+    manualDisconnect = true;
+    shouldAutoReconnect = false;
+    reconnectAttempts = 0;
+    hasEverConnected = false;
+    clearReconnectTimer();
 
-  if (!currentUuid) {
-    audioDebug("No UUID found. Creating/loading UUID...");
-    loadOrCreateUuid();
-  }
+    pendingConnectPayload = null;
 
-  getAudioCtx();
-  playConnectChime();
+    setStatus("Disconnecting...", "connecting");
+    log("Manual disconnect requested. Auto-reconnect disabled.", "bad");
 
-  manualDisconnect = false;
-  shouldAutoReconnect = true;
-  clearReconnectTimer();
+    sendBrowserMessage({
+      type: "disconnect-ap"
+    });
+  });
 
-  const payload = [
-    {
-      cmd: "Connect",
-      game: String(gameNameEl.value || "").trim(),
-      name: slotNameEl.value.trim(),
-      password: passwordEl.value,
-      uuid: currentUuid,
-      version: { major: 0, minor: 6, build: 0, class: "Version" },
-      items_handling: 7,
-      tags: ["Tracker"]
+  document.getElementById("loginBtn")?.addEventListener("click", sendConnectPacket);
+
+  document.getElementById("syncBtn")?.addEventListener("click", () => {
+    sendAp([{ cmd: "Sync" }]);
+  });
+
+  document.getElementById("sendChatBtn")?.addEventListener("click", () => {
+    const text = chatInputEl.value.trim();
+    if (!text) return;
+
+    sendAp([{ cmd: "Say", text }]);
+    chatInputEl.value = "";
+  });
+
+  /* ==========================================================================
+   * STARTUP
+   * ========================================================================== */
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadLastApUrl();
+
+    const viewDescriptions = {
+      "item-alert": "Shows only popup item alerts. No main panel cards.",
+      "log": "Shows just the live log overlay.",
+      "full": "Shows the normal full panel layout.",
+      "compact": "Shows a minimal session overlay without the full item list."
+    };
+
+    const viewSelect = document.getElementById("obsViewSelect");
+    const viewDesc = document.getElementById("viewDescription");
+
+    if (viewSelect && viewDesc) {
+      const updateViewDescription = () => {
+        viewDesc.textContent = viewDescriptions[viewSelect.value] || "";
+      };
+
+      viewSelect.addEventListener("change", updateViewDescription);
+      updateViewDescription();
     }
-  ];
 
-  audioDebug(`Connect packet prepared for slot="${slotNameEl.value.trim()}" game="${String(gameNameEl.value || "").trim()}"`);
-
-  if (connected) {
-    audioDebug("Already authenticated. Reconnect flow triggered.", "bad");
-
-    log("Already authenticated. Reconnecting before switching game/slot...", "bad");
-    pendingConnectPayload = payload;
-    resetSessionState();
-    updateProgressDisplay();
-
-    sendBrowserMessage({ type: "disconnect-ap" });
-
-    setTimeout(() => {
-      const normalizedUrl = normalizeApUrl(apUrlEl.value);
-      apUrlEl.value = normalizedUrl;
-      sendBrowserMessage({
-        type: "connect-ap",
-        apUrl: normalizedUrl
-      });
-    }, 250);
-
-    return;
-  }
-
-  pendingConnectPayload = payload;
-
-  log(`Sending Connect packet with session UUID ${currentUuid}`, "good");
-  log(`Using UUID: ${currentUuid}`, "good");
-  audioDebug("Calling sendAp() with Connect packet", "good");
-  sendAp(payload);
-}
-
-document.getElementById("loginBtn").addEventListener("click", sendConnectPacket);
-
-
-document.getElementById("disconnectBtn").addEventListener("click", () => {
-  manualDisconnect = true;
-  shouldAutoReconnect = false;
-  reconnectAttempts = 0;
-  hasEverConnected = false;
-  clearReconnectTimer();
-
-  pendingConnectPayload = null;
-
-  setStatus("Disconnecting...", "connecting");
-  log("Manual disconnect requested. Auto-reconnect disabled.", "bad");
-
-  sendBrowserMessage({
-    type: "disconnect-ap"
+    loadOrCreateUuid();
+    ensureBrowserSocket();
+    renderRoom();
+    renderPlayers();
+    renderSession();
+    renderItems();
+    renderLatestItem();
+    renderHints();
+    applyViewMode();
+    applyAutoMode();
   });
-});
 
-
-
-    document.getElementById("syncBtn").addEventListener("click", () => {
-      sendAp([{ cmd: "Sync" }]);
-    });
-
-    document.getElementById("sendChatBtn").addEventListener("click", () => {
-      const text = chatInputEl.value.trim();
-      if (!text) return;
-
-      sendAp([{ cmd: "Say", text }]);
-      chatInputEl.value = "";
-    });
-
-	
-loadOrCreateUuid();
-ensureBrowserSocket();
-renderRoom();
-renderPlayers();
-renderSession();
-renderItems();
-renderLatestItem();
-applyViewMode();
-applyAutoMode();
-
-window.addEventListener("DOMContentLoaded", () => {
-  applyAutoMode();
-});
-
-// unlock audio on first user interaction
-document.addEventListener("click", () => {
-  getAudioCtx();
-}, { once: true });
-	
-  </script>
+  document.addEventListener("click", () => {
+    getAudioCtx();
+  }, { once: true });
+</script>
 </body>
 </html>
