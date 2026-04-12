@@ -1214,6 +1214,71 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   margin-bottom: 2px;
 }
 
+.step-optional {
+  display: inline-block;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+
+  color: #08101d;
+  background: linear-gradient(180deg, #9aa8c7, #6f89b0);
+
+  box-shadow:
+    0 0 8px rgba(154, 168, 199, 0.4),
+    inset 0 0 4px rgba(255,255,255,0.2);
+}
+
+.card:not(#logCard) h2 {
+  margin-top: 18px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(0, 234, 255, 0.15);
+}
+
+.help-section {
+  margin-bottom: 16px;
+}
+
+.help-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 234, 255, 0.06);
+
+  cursor: pointer;
+  font-weight: 600;
+
+  transition: all 0.2s ease;
+}
+
+.help-header:hover {
+  border-color: var(--accent);
+  box-shadow: 0 0 10px rgba(0, 234, 255, 0.2);
+}
+
+.help-toggle-icon {
+  transition: transform 0.2s ease;
+}
+
+.help-section.collapsed .help-toggle-icon {
+  transform: rotate(-90deg);
+}
+
+.help-content {
+  margin-top: 10px;
+}
+
+.help-section.collapsed .help-content {
+  display: none;
+}
+
 </style>
 
 </head>
@@ -1230,35 +1295,61 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
 <div class="grid" id="mainGrid">
   <div class="card stack" id="connectionCard">
-  <!-- 🔽 ADD THIS BLOCK -->
-<div class="item">
-  <strong><span class="step-number">1</span>Connect</strong>
 
-  <div class="muted small">
-    Establish a connection to the Archipelago server.
+<div class="help-section">
+
+  <div class="help-header" id="helpToggle">
+    <span>Help / Steps</span>
+    <span class="help-toggle-icon">▼</span>
   </div>
 
-  <div class="substeps">
-    <div>• Enter the server address (e.g. ws:// or wss://)</div>
-    <div>• Click Connect</div>
-    <div>• Wait for the connection status to turn green</div>
+  <div class="help-content" id="helpContent">
+
+    <!-- STEP 1 -->
+    <div class="item">
+      <strong><span class="step-number">1</span>Connect</strong>
+      <div class="muted small">Establish a connection to the Archipelago server.</div>
+      <div class="substeps">
+        <div>• Enter the server address</div>
+        <div>• Click Connect</div>
+        <div>• Wait for green status</div>
+      </div>
+    </div>
+
+    <!-- STEP 2 -->
+    <div class="item">
+      <strong><span class="step-number">2</span>Send Connect packet</strong>
+      <div class="muted small">Log in and initialise your session.</div>
+      <div class="substeps">
+        <div>• Enter slot name</div>
+        <div>• Select game</div>
+        <div>• Click Login</div>
+      </div>
+    </div>
+
+    <!-- STEP 3 -->
+    <div class="item">
+      <strong>
+        <span class="step-number">3</span>
+        Generate OBS Link
+        <span class="step-optional">Optional</span>
+      </strong>
+
+      <div class="muted small">
+        Create a browser source link for OBS.
+      </div>
+
+      <div class="substeps">
+        <div>• Fill in connection + login info</div>
+        <div>• Open OBS Link Options (optional)</div>
+        <div>• Click Generate</div>
+        <div>• Copy into OBS browser source</div>
+      </div>
+    </div>
+
   </div>
 </div>
 
-<div class="item">
-  <strong><span class="step-number">2</span>Send Connect packet</strong>
-
-  <div class="muted small">
-    Log in and initialise your session.
-  </div>
-
-  <div class="substeps">
-    <div>• Enter your slot name</div>
-    <div>• Select your game</div>
-    <div>• Enter password (if required)</div>
-    <div>• Click Login</div>
-  </div>
-</div>
   <!-- 🔼 END BLOCK -->
 
   <!-- your existing inputs/buttons stay unchanged -->
@@ -1274,6 +1365,7 @@ body.obs-mode.view-item-alert .obs-toast-layer {
           <button id="disconnectBtn" class="secondary">Disconnect</button>
         </div>
 
+<h2>Login</h2>
         <div class="row">
           <div>
             <label for="slotName">Slot / player name</label>
@@ -1292,7 +1384,13 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   <input id="password" type="password" placeholder="Optional" />
 </div>
 
+        <div class="row">
+          <button id="loginBtn">Login</button>
+          <button id="syncBtn" class="secondary">Sync Items</button>
+        </div>
+
 <div>
+<h2>OBS Overlay</h2>
   <label for="obsLinkOutput">OBS Overlay Link</label>
   <input id="obsLinkOutput" readonly placeholder="OBS browser source link will appear here" />
 
@@ -1324,11 +1422,6 @@ body.obs-mode.view-item-alert .obs-toast-layer {
     <button id="copyObsLinkBtn" class="secondary" type="button">Copy OBS Link</button>
   </div>
 </div>
-
-        <div class="row">
-          <button id="loginBtn">Login</button>
-          <button id="syncBtn" class="secondary">Sync Items</button>
-        </div>
 
         <div>
           <h2>Quick chat / commands</h2>
@@ -1466,6 +1559,9 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   const progressSectionEl = document.getElementById("progressSection"); // optional, may not exist
   const progressTextEl = document.getElementById("progressText");       // optional, may not exist
   const progressFillEl = document.getElementById("progressFill");       // optional, may not exist
+
+const helpToggle = document.getElementById("helpToggle");
+const helpSection = document.querySelector(".help-section");
 
   /* ==========================================================================
    * CONSTANTS / STORAGE KEYS
@@ -3278,6 +3374,21 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   /* ==========================================================================
    * UI EVENT WIRING
    * ========================================================================== */
+
+if (helpToggle && helpSection) {
+  helpToggle.addEventListener("click", () => {
+    helpSection.classList.toggle("collapsed");
+
+    const isCollapsed = helpSection.classList.contains("collapsed");
+    localStorage.setItem("helpCollapsed", isCollapsed);
+  });
+
+  // Restore state
+  const saved = localStorage.getItem("helpCollapsed") === "true";
+  if (saved) {
+    helpSection.classList.add("collapsed");
+  }
+}
 
   if (toggleHideFoundHintsEl) {
     toggleHideFoundHintsEl.checked = hideFoundHints;
