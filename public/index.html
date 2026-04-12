@@ -1238,45 +1238,142 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   border-top: 1px solid rgba(0, 234, 255, 0.15);
 }
 
-.help-section {
-  margin-bottom: 16px;
+.collapsible-section {
+  margin-bottom: 14px;
 }
 
-.help-header {
+.collapsible-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  gap: 12px;
+  width: 100%;
+  margin: 0 0 10px;
   padding: 10px 14px;
 
   border: 1px solid var(--border);
   border-radius: 12px;
   background: rgba(0, 234, 255, 0.06);
+  color: var(--text);
 
   cursor: pointer;
-  font-weight: 600;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
 
-  transition: all 0.2s ease;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
 }
 
-.help-header:hover {
-  border-color: var(--accent);
-  box-shadow: 0 0 10px rgba(0, 234, 255, 0.2);
+.collapsible-header:hover {
+  border-color: rgba(0, 234, 255, 0.45);
+  box-shadow:
+    0 0 12px rgba(0, 234, 255, 0.16),
+    inset 0 0 12px rgba(0, 234, 255, 0.05);
+  transform: translateY(-1px);
 }
 
-.help-toggle-icon {
+.collapsible-title {
+  min-width: 0;
+}
+
+.collapsible-icon {
+  flex: 0 0 auto;
   transition: transform 0.2s ease;
 }
 
-.help-section.collapsed .help-toggle-icon {
+.collapsible-section.collapsed .collapsible-icon {
   transform: rotate(-90deg);
 }
 
-.help-content {
-  margin-top: 10px;
+.collapsible-content {
+  min-width: 0;
 }
 
-.help-section.collapsed .help-content {
+.collapsible-section.collapsed .collapsible-content {
   display: none;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.hints-card {
+  min-height: 0;
+}
+
+#hints.list {
+  max-height: 320px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.right-column {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+}
+
+.right-card {
+  height: 600px;
+  min-height: 600px;
+  min-width: 0;
+}
+
+#sessionCard {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.collapsible-fill {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.collapsible-fill-content {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+.items-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+#items.list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  max-height: 100%;
+}
+
+.collapsible-section.collapsed .collapsible-content {
+  display: none;
+}
+
+#sessionCard.collapsed-card,
+#sessionCard:has(.collapsible-section.collapsed) {
+  height: auto;
+  min-height: 0;
+}
+
+#sessionCard.collapsed-card {
+  height: auto;
+  min-height: 0;
 }
 
 </style>
@@ -1296,38 +1393,42 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 <div class="grid" id="mainGrid">
   <div class="card stack" id="connectionCard">
 
-<div class="help-section">
+<div class="collapsible-section" data-section="help">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Help / Steps</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
 
-  <div class="help-header" id="helpToggle">
-    <span>Help / Steps</span>
-    <span class="help-toggle-icon">▼</span>
-  </div>
-
-  <div class="help-content" id="helpContent">
-
-    <!-- STEP 1 -->
+  <div class="collapsible-content">
     <div class="item">
       <strong><span class="step-number">1</span>Connect</strong>
-      <div class="muted small">Establish a connection to the Archipelago server.</div>
+
+      <div class="muted small">
+        Establish a connection to the Archipelago server.
+      </div>
+
       <div class="substeps">
-        <div>• Enter the server address</div>
+        <div>• Enter the server address (e.g. ws:// or wss://)</div>
         <div>• Click Connect</div>
-        <div>• Wait for green status</div>
+        <div>• Wait for the connection status to turn green</div>
       </div>
     </div>
 
-    <!-- STEP 2 -->
     <div class="item">
       <strong><span class="step-number">2</span>Send Connect packet</strong>
-      <div class="muted small">Log in and initialise your session.</div>
+
+      <div class="muted small">
+        Log in and initialise your session.
+      </div>
+
       <div class="substeps">
-        <div>• Enter slot name</div>
-        <div>• Select game</div>
+        <div>• Enter your slot name</div>
+        <div>• Select your game</div>
+        <div>• Enter password (if required)</div>
         <div>• Click Login</div>
       </div>
     </div>
 
-    <!-- STEP 3 -->
     <div class="item">
       <strong>
         <span class="step-number">3</span>
@@ -1336,17 +1437,20 @@ body.obs-mode.view-item-alert .obs-toast-layer {
       </strong>
 
       <div class="muted small">
-        Create a browser source link for OBS.
+        Create a browser source link for OBS so the panel can open in overlay mode automatically.
       </div>
 
       <div class="substeps">
-        <div>• Fill in connection + login info</div>
-        <div>• Open OBS Link Options (optional)</div>
-        <div>• Click Generate</div>
-        <div>• Copy into OBS browser source</div>
+        <div>• Make sure the Archipelago server address is filled in</div>
+        <div>• Enter your slot name</div>
+        <div>• Select your game</div>
+        <div>• Open <strong>OBS Link Options</strong> if you want to change the overlay mode</div>
+        <div>• Choose the view you want (for example: Item Alert, Log, Full, or Compact)</div>
+        <div>• Click <strong>Generate OBS Link</strong></div>
+        <div>• Click <strong>Copy OBS Link</strong></div>
+        <div>• Paste the copied link into an OBS Browser Source</div>
       </div>
     </div>
-
   </div>
 </div>
 
@@ -1354,91 +1458,129 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
   <!-- your existing inputs/buttons stay unchanged -->
   
-        <div>
-          <h2>Connection</h2>
-          <label for="apUrl">Archipelago server URL</label>
-          <input id="apUrl" value="ws://127.0.0.1:38281" />
-        </div>
-		
-		        <div class="row">
-          <button id="connectBtn">Connect</button>
-          <button id="disconnectBtn" class="secondary">Disconnect</button>
-        </div>
+<div class="collapsible-section" data-section="connection">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Connection</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
 
-<h2>Login</h2>
-        <div class="row">
-          <div>
-            <label for="slotName">Slot / player name</label>
-            <input id="slotName" placeholder="Player1" />
-          </div>
-<div>
-  <label for="gameName">Game</label>
-  <select id="gameName">
-    <option value="">Select a game...</option>
-  </select>
-</div>
-        </div>
+  <div class="collapsible-content">
+    <label for="apUrl">Archipelago server URL</label>
+    <input id="apUrl" value="ws://127.0.0.1:38281" />
 
-<div>
-  <label for="password">Password</label>
-  <input id="password" type="password" placeholder="Optional" />
-</div>
-
-        <div class="row">
-          <button id="loginBtn">Login</button>
-          <button id="syncBtn" class="secondary">Sync Items</button>
-        </div>
-
-<div>
-<h2>OBS Overlay</h2>
-  <label for="obsLinkOutput">OBS Overlay Link</label>
-  <input id="obsLinkOutput" readonly placeholder="OBS browser source link will appear here" />
-
-  <div class="obs-param-wrap" style="margin-top: 8px;">
-    <button id="obsParamToggleBtn" class="secondary" type="button">OBS Link Options ▼</button>
-
-<div id="obsParamMenu" class="obs-param-menu hidden">
-
-  <label class="obs-check">
-    <input type="checkbox" id="obsParamView" checked />
-    Include view mode
-  </label>
-
-<div style="margin-top: 10px;">
-<label for="obsViewSelect">Overlay view</label>
-<select id="obsViewSelect">
-  <option value="item-alert">Item Alert</option>
-  <option value="log">Log</option>
-  <option value="full">Full</option>
-  <option value="compact">Compact</option>
-</select>
-<div id="viewDescription" class="small muted"></div>
-</div>
-</div>
-  </div>
-
-  <div class="row" style="margin-top: 8px;">
-    <button id="generateObsLinkBtn" class="secondary" type="button">Generate OBS Link</button>
-    <button id="copyObsLinkBtn" class="secondary" type="button">Copy OBS Link</button>
+    <div class="row">
+      <button id="connectBtn">Connect</button>
+      <button id="disconnectBtn" class="secondary">Disconnect</button>
+    </div>
   </div>
 </div>
 
-        <div>
-          <h2>Quick chat / commands</h2>
-          <div class="row">
-            <input id="chatInput" placeholder="Type chat or !players" />
-            <button id="sendChatBtn">Send</button>
-          </div>
-        </div>
+<div class="collapsible-section" data-section="login">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Login</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
 
-        <div>
-          <h2>Room</h2>
-          <div id="roomInfo" class="small muted">No room data yet.</div>
-        </div>
+  <div class="collapsible-content">
+    <div class="row">
+      <div>
+        <label for="slotName">Slot / player name</label>
+        <input id="slotName" placeholder="Player1" />
+      </div>
 
-<div class="players-section">
-  <h2>Players</h2>
-  <div id="players" class="list"></div>
+      <div>
+        <label for="gameName">Game</label>
+        <select id="gameName">
+          <option value="">Select a game...</option>
+        </select>
+      </div>
+    </div>
+
+    <div>
+      <label for="password">Password</label>
+      <input id="password" type="password" placeholder="Optional" />
+    </div>
+
+    <div class="row">
+      <button id="loginBtn">Login</button>
+      <button id="syncBtn" class="secondary">Sync Items</button>
+    </div>
+  </div>
+</div>
+
+<div class="collapsible-section" data-section="obs-overlay">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">OBS Overlay</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
+
+  <div class="collapsible-content">
+    <label for="obsLinkOutput">OBS Overlay Link</label>
+    <input id="obsLinkOutput" readonly placeholder="OBS browser source link will appear here" />
+
+    <div class="obs-param-wrap" style="margin-top: 8px;">
+      <button id="obsParamToggleBtn" class="secondary" type="button">OBS Link Options ▼</button>
+
+      <div id="obsParamMenu" class="obs-param-menu hidden">
+        <label class="obs-check">
+          <input type="checkbox" id="obsParamView" checked />
+          Include view mode
+        </label>
+
+        <div style="margin-top: 10px;">
+          <label for="obsViewSelect">Overlay view</label>
+          <select id="obsViewSelect">
+            <option value="item-alert">Item Alert</option>
+            <option value="log">Log</option>
+            <option value="full">Full</option>
+            <option value="compact">Compact</option>
+          </select>
+          <div id="viewDescription" class="small muted"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" style="margin-top: 8px;">
+      <button id="generateObsLinkBtn" class="secondary" type="button">Generate OBS Link</button>
+      <button id="copyObsLinkBtn" class="secondary" type="button">Copy OBS Link</button>
+    </div>
+  </div>
+</div>
+
+<div class="collapsible-section" data-section="quick-chat">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Quick chat / commands</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
+
+  <div class="collapsible-content">
+    <div class="row">
+      <input id="chatInput" placeholder="Type chat or !players" />
+      <button id="sendChatBtn">Send</button>
+    </div>
+  </div>
+</div>
+
+<div class="collapsible-section" data-section="room">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Room</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
+
+  <div class="collapsible-content">
+    <div id="roomInfo" class="small muted">No room data yet.</div>
+  </div>
+</div>
+
+<div class="collapsible-section" data-section="players">
+  <button class="collapsible-header" type="button">
+    <span class="collapsible-title">Players</span>
+    <span class="collapsible-icon">▼</span>
+  </button>
+
+  <div class="collapsible-content">
+    <div id="players" class="list"></div>
+  </div>
 </div>
       </div>
 
@@ -1475,40 +1617,53 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
 <div class="right-column">
   <div class="card stack right-card" id="sessionCard">
-    <div>
-      <h2>Session state</h2>
-      <div id="sessionState" class="small muted">Not authenticated.</div>
-    </div>
+    <div class="collapsible-section collapsible-fill" data-section="session-state">
+      <button class="collapsible-header" type="button">
+        <span class="collapsible-title">Session state</span>
+        <span class="collapsible-icon">▼</span>
+      </button>
 
-    <div class="items-section">
-      <h2>Latest acquired</h2>
-      <div id="latestItem" class="latest-item muted small">No items yet.</div>
+      <div class="collapsible-content collapsible-fill-content">
+        <div>
+          <div id="sessionState" class="small muted">Not authenticated.</div>
+        </div>
 
-      <h2 style="margin-top: 14px;">Received items</h2>
-      <div id="items" class="list"></div>
+        <div class="items-section">
+          <h2>Latest acquired</h2>
+          <div id="latestItem" class="latest-item muted small">No items yet.</div>
+
+          <h2 style="margin-top: 14px;">Received items</h2>
+          <div id="items" class="list"></div>
+        </div>
+      </div>
     </div>
   </div>
 
-<!-- REPLACE the current hints card header block with this -->
-<div class="card stack hints-card" id="hintsCard">
-  <div class="card-head hints-head">
-    <div class="hints-head-main">
-      <h2>Hints</h2>
-      <div id="hintsSummary" class="small muted">No hints yet.</div>
+  <div class="card stack hints-card" id="hintsCard">
+    <div class="collapsible-section" data-section="hints">
+      <button class="collapsible-header" type="button">
+        <span class="collapsible-title">Hints</span>
+        <span class="collapsible-icon">▼</span>
+      </button>
+
+      <div class="collapsible-content">
+        <div class="card-head hints-head" style="margin-bottom: 10px;">
+          <div class="hints-head-main">
+            <div id="hintsSummary" class="small muted">No hints yet.</div>
+          </div>
+
+          <label class="log-toggle" for="toggleHideFoundHints">
+            <input type="checkbox" id="toggleHideFoundHints" />
+            <span class="log-toggle-box"></span>
+            <span class="log-toggle-text">Hide found</span>
+          </label>
+        </div>
+
+        <div id="hints" class="list"></div>
+      </div>
     </div>
-
-    <label class="log-toggle" for="toggleHideFoundHints">
-      <input type="checkbox" id="toggleHideFoundHints" />
-      <span class="log-toggle-box"></span>
-      <span class="log-toggle-text">Hide found</span>
-    </label>
   </div>
-
-  <div id="hints" class="list"></div>
 </div>
-</div>
-    </div>
-  </div>
 
 <div id="obsToastLayer" class="obs-toast-layer" aria-live="polite" aria-atomic="false"></div>
 
@@ -3375,6 +3530,47 @@ const helpSection = document.querySelector(".help-section");
    * UI EVENT WIRING
    * ========================================================================== */
 
+function setupCollapsibles() {
+  const sections = document.querySelectorAll(".collapsible-section");
+
+  for (const section of sections) {
+    const header = section.querySelector(".collapsible-header");
+    const key = section.dataset.section;
+
+    if (!header || !key) continue;
+
+    const storageKey = `collapsed:${key}`;
+    const savedCollapsed = localStorage.getItem(storageKey) === "true";
+
+    if (savedCollapsed) {
+      section.classList.add("collapsed");
+    }
+
+    const parentCard = section.closest(".card");
+
+    function syncCollapsedCardState() {
+      if (!parentCard) return;
+
+      if (section.classList.contains("collapsed")) {
+        parentCard.classList.add("collapsed-card");
+      } else {
+        parentCard.classList.remove("collapsed-card");
+      }
+    }
+
+    syncCollapsedCardState();
+
+    header.addEventListener("click", () => {
+      section.classList.toggle("collapsed");
+      localStorage.setItem(
+        storageKey,
+        String(section.classList.contains("collapsed"))
+      );
+      syncCollapsedCardState();
+    });
+  }
+}
+
 if (helpToggle && helpSection) {
   helpToggle.addEventListener("click", () => {
     helpSection.classList.toggle("collapsed");
@@ -3538,6 +3734,7 @@ if (helpToggle && helpSection) {
     }
 
     loadOrCreateUuid();
+	setupCollapsibles();
     ensureBrowserSocket();
     renderRoom();
     renderPlayers();
