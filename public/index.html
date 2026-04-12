@@ -1188,6 +1188,32 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   }
 }
 
+.step-number {
+  display: inline-block;
+  width: 22px;
+  height: 22px;
+  line-height: 22px;
+  text-align: center;
+  border-radius: 50%;
+  background: linear-gradient(180deg, #00eaff, #00ff9c);
+  color: #001018;
+  font-size: 12px;
+  font-weight: bold;
+  margin-right: 8px;
+}
+
+.substeps {
+  margin-top: 6px;
+  padding-left: 26px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.substeps div {
+  margin-bottom: 2px;
+}
+
 </style>
 
 </head>
@@ -1204,6 +1230,39 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
 <div class="grid" id="mainGrid">
   <div class="card stack" id="connectionCard">
+  <!-- 🔽 ADD THIS BLOCK -->
+<div class="item">
+  <strong><span class="step-number">1</span>Connect</strong>
+
+  <div class="muted small">
+    Establish a connection to the Archipelago server.
+  </div>
+
+  <div class="substeps">
+    <div>• Enter the server address (e.g. ws:// or wss://)</div>
+    <div>• Click Connect</div>
+    <div>• Wait for the connection status to turn green</div>
+  </div>
+</div>
+
+<div class="item">
+  <strong><span class="step-number">2</span>Send Connect packet</strong>
+
+  <div class="muted small">
+    Log in and initialise your session.
+  </div>
+
+  <div class="substeps">
+    <div>• Enter your slot name</div>
+    <div>• Select your game</div>
+    <div>• Enter password (if required)</div>
+    <div>• Click Login</div>
+  </div>
+</div>
+  <!-- 🔼 END BLOCK -->
+
+  <!-- your existing inputs/buttons stay unchanged -->
+  
         <div>
           <h2>Connection</h2>
           <label for="apUrl">Archipelago server URL</label>
@@ -1267,7 +1326,7 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 </div>
 
         <div class="row">
-          <button id="loginBtn">Send Connect Packet</button>
+          <button id="loginBtn">Login</button>
           <button id="syncBtn" class="secondary">Sync Items</button>
         </div>
 
