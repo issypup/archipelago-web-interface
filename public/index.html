@@ -1300,6 +1300,16 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   }
 }
 
+select {
+  background: rgba(10, 16, 40, 0.9);
+  color: var(--text);
+}
+
+select option {
+  background: #0e1730;
+  color: #e6f1ff;
+}
+
 /* =========================
    WINDOWS 98 THEME
    Applies only when body has theme-win98
@@ -1774,6 +1784,494 @@ body.theme-win98 .log-toggle input[type="checkbox"]:checked + .log-toggle-box::a
   opacity: 1;
 }
 
+/* =========================
+   ARCHIPELAGO FANTASY THEME
+   Applies only when body has theme-fantasy
+   ========================= */
+
+body.theme-fantasy {
+  --bg: #10202a;
+  --panel: rgba(63, 47, 28, 0.88);
+  --panel2: rgba(88, 66, 38, 0.9);
+
+  --text: #f6ecd2;
+  --muted: #cfbf94;
+
+  --accent: #d4a84f;
+  --accent2: #7ed6c1;
+
+  --good: #77d38d;
+  --bad: #d96a5f;
+
+  --border: rgba(212, 168, 79, 0.38);
+
+  font-family: Georgia, "Times New Roman", serif;
+  color: var(--text);
+  background:
+    radial-gradient(circle at top, rgba(37, 72, 86, 0.45), transparent 40%),
+    linear-gradient(180deg, #14313d 0%, #1e2f2d 35%, #2d241a 100%);
+  background-attachment: fixed;
+}
+
+body.theme-fantasy .wrap {
+  padding: 18px;
+}
+
+body.theme-fantasy .topbar {
+  gap: 14px;
+}
+
+body.theme-fantasy .topbar > div:first-child,
+body.theme-fantasy .theme-switcher,
+body.theme-fantasy .status {
+  background:
+    linear-gradient(180deg, rgba(91, 67, 35, 0.92), rgba(58, 41, 24, 0.94));
+  border: 1px solid rgba(212, 168, 79, 0.45);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 196, 0.12),
+    0 8px 22px rgba(0,0,0,0.28);
+}
+
+body.theme-fantasy .topbar > div:first-child {
+  padding: 10px 14px;
+  border-radius: 18px;
+}
+
+body.theme-fantasy h1,
+body.theme-fantasy h2,
+body.theme-fantasy .hint-title,
+body.theme-fantasy .latest-item strong {
+  color: #ffe8ad;
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.02em;
+}
+
+body.theme-fantasy h1 {
+  font-size: 28px;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.3);
+}
+
+body.theme-fantasy h2 {
+  font-size: 19px;
+}
+
+body.theme-fantasy label,
+body.theme-fantasy .muted,
+body.theme-fantasy .small,
+body.theme-fantasy .hint-meta .muted-line,
+body.theme-fantasy #viewDescription,
+body.theme-fantasy .substeps {
+  color: var(--muted);
+}
+
+body.theme-fantasy .card,
+body.theme-fantasy .obs-param-menu {
+  background:
+    linear-gradient(180deg, rgba(75, 56, 32, 0.95), rgba(52, 38, 23, 0.97));
+  border: 1px solid rgba(212, 168, 79, 0.35);
+  border-radius: 20px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 237, 187, 0.08),
+    0 10px 28px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(255, 214, 130, 0.03);
+  backdrop-filter: blur(6px);
+}
+
+body.theme-fantasy .card:not(#logCard) h2 {
+  border-top: 1px solid rgba(212, 168, 79, 0.16);
+}
+
+body.theme-fantasy input,
+body.theme-fantasy select,
+body.theme-fantasy textarea {
+  background:
+    linear-gradient(180deg, rgba(37, 29, 22, 0.95), rgba(28, 22, 17, 0.98));
+  border: 1px solid rgba(212, 168, 79, 0.28);
+  border-radius: 14px;
+  color: var(--text);
+  box-shadow:
+    inset 0 1px 3px rgba(0,0,0,0.35),
+    0 0 0 1px rgba(255, 221, 156, 0.02);
+}
+
+body.theme-fantasy input:focus,
+body.theme-fantasy select:focus,
+body.theme-fantasy textarea:focus {
+  border-color: rgba(212, 168, 79, 0.75);
+  box-shadow:
+    0 0 0 1px rgba(212, 168, 79, 0.18),
+    0 0 10px rgba(212, 168, 79, 0.18),
+    inset 0 1px 3px rgba(0,0,0,0.35);
+}
+
+body.theme-fantasy button,
+body.theme-fantasy .collapsible-header {
+  background:
+    linear-gradient(180deg, #8f6b35 0%, #6d4f26 55%, #573b1f 100%);
+  color: #fff3cf;
+  border: 1px solid rgba(241, 203, 110, 0.45);
+  border-radius: 14px;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 241, 194, 0.2),
+    0 6px 16px rgba(0,0,0,0.24);
+  text-shadow: 0 1px 0 rgba(0,0,0,0.35);
+}
+
+body.theme-fantasy button.secondary {
+  background:
+    linear-gradient(180deg, #47665f 0%, #334944 55%, #263632 100%);
+  border-color: rgba(126, 214, 193, 0.32);
+  color: #e2fff8;
+}
+
+body.theme-fantasy button:hover,
+body.theme-fantasy .collapsible-header:hover {
+  transform: translateY(-1px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 241, 194, 0.24),
+    0 8px 18px rgba(0,0,0,0.28),
+    0 0 14px rgba(212, 168, 79, 0.12);
+}
+
+body.theme-fantasy .status {
+  color: #f5e5bc;
+}
+
+body.theme-fantasy .status::before {
+  background: #9c8d6d;
+  box-shadow: 0 0 0 0 rgba(0,0,0,0);
+}
+
+body.theme-fantasy .status.good {
+  border-color: rgba(119, 211, 141, 0.46);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 8px 22px rgba(0,0,0,0.28),
+    0 0 14px rgba(119, 211, 141, 0.14);
+}
+
+body.theme-fantasy .status.good::before {
+  background: var(--good);
+  box-shadow: 0 0 10px rgba(119, 211, 141, 0.28);
+}
+
+body.theme-fantasy .status.bad {
+  border-color: rgba(217, 106, 95, 0.4);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 8px 22px rgba(0,0,0,0.28),
+    0 0 14px rgba(217, 106, 95, 0.12);
+}
+
+body.theme-fantasy .status.bad::before {
+  background: var(--bad);
+}
+
+body.theme-fantasy .status.connecting {
+  border-color: rgba(126, 214, 193, 0.38);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.06),
+    0 8px 22px rgba(0,0,0,0.28),
+    0 0 14px rgba(126, 214, 193, 0.12);
+}
+
+body.theme-fantasy .status.connecting::before {
+  border-top-color: var(--accent2);
+}
+
+body.theme-fantasy .item,
+body.theme-fantasy .latest-item,
+body.theme-fantasy .hint-item {
+  background:
+    linear-gradient(180deg, rgba(78, 58, 34, 0.78), rgba(60, 44, 25, 0.86));
+  border: 1px solid rgba(212, 168, 79, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 233, 175, 0.05),
+    0 4px 14px rgba(0,0,0,0.18);
+}
+
+body.theme-fantasy .item {
+  border-left: 4px solid rgba(126, 214, 193, 0.4);
+}
+
+body.theme-fantasy #players .item {
+  border-left: 4px solid rgba(212, 168, 79, 0.55);
+  background:
+    linear-gradient(180deg, rgba(89, 65, 36, 0.76), rgba(65, 46, 26, 0.88));
+}
+
+body.theme-fantasy #items .item {
+  border-left: 4px solid rgba(126, 214, 193, 0.5);
+}
+
+body.theme-fantasy .hint-item {
+  border-left: 4px solid rgba(212, 168, 79, 0.65);
+}
+
+body.theme-fantasy .hint-item::before {
+  background: linear-gradient(180deg, rgba(212, 168, 79, 0.95), rgba(142, 109, 50, 0.95));
+  box-shadow: 0 0 12px rgba(212, 168, 79, 0.18);
+}
+
+body.theme-fantasy .hint-item.hint-found {
+  border-color: rgba(119, 211, 141, 0.28);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,0.04),
+    0 0 16px rgba(119, 211, 141, 0.08);
+}
+
+body.theme-fantasy .hint-item.hint-found::before {
+  background: linear-gradient(180deg, #77d38d, #4d9f61);
+  box-shadow: 0 0 12px rgba(119, 211, 141, 0.2);
+}
+
+body.theme-fantasy .hint-item.hint-unfound::before {
+  background: linear-gradient(180deg, #e3ba62, #a6782f);
+  box-shadow: 0 0 12px rgba(227, 186, 98, 0.18);
+}
+
+body.theme-fantasy .hint-item.hint-important {
+  background:
+    linear-gradient(180deg, rgba(96, 69, 33, 0.92), rgba(67, 48, 24, 0.94));
+  border-color: rgba(212, 168, 79, 0.48);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 235, 185, 0.08),
+    0 0 18px rgba(212, 168, 79, 0.12);
+}
+
+body.theme-fantasy .hint-badge,
+body.theme-fantasy .hint-badge-found,
+body.theme-fantasy .hint-badge-unfound,
+body.theme-fantasy .hint-badge-important,
+body.theme-fantasy .step-optional {
+  border-radius: 999px;
+  border: 1px solid rgba(212, 168, 79, 0.24);
+  background:
+    linear-gradient(180deg, rgba(105, 78, 43, 0.95), rgba(76, 56, 31, 0.95));
+  color: #ffedbc;
+  box-shadow: none;
+}
+
+body.theme-fantasy .hint-badge-found {
+  border-color: rgba(119, 211, 141, 0.28);
+  background:
+    linear-gradient(180deg, rgba(69, 115, 73, 0.95), rgba(46, 80, 50, 0.95));
+  color: #e4ffea;
+}
+
+body.theme-fantasy .hint-badge-unfound {
+  border-color: rgba(227, 186, 98, 0.28);
+  background:
+    linear-gradient(180deg, rgba(124, 93, 43, 0.95), rgba(92, 65, 28, 0.95));
+  color: #fff0c8;
+}
+
+body.theme-fantasy .hint-badge-important {
+  border-color: rgba(212, 168, 79, 0.34);
+  background:
+    linear-gradient(180deg, rgba(132, 97, 41, 0.95), rgba(95, 67, 26, 0.95));
+  color: #fff2ca;
+}
+
+body.theme-fantasy .players-placeholder {
+  color: #e7d3a1;
+}
+
+body.theme-fantasy .progress-bar {
+  background:
+    linear-gradient(180deg, rgba(28, 22, 17, 0.92), rgba(20, 16, 12, 0.95));
+  border: 1px solid rgba(212, 168, 79, 0.28);
+  box-shadow:
+    inset 0 1px 6px rgba(0,0,0,0.4),
+    0 0 10px rgba(0,0,0,0.18);
+}
+
+body.theme-fantasy .progress-fill {
+  background:
+    linear-gradient(90deg, #57a989 0%, #7ed6c1 38%, #d4a84f 72%, #f0d88a 100%);
+  box-shadow:
+    0 0 12px rgba(212, 168, 79, 0.18),
+    0 0 20px rgba(126, 214, 193, 0.12);
+}
+
+body.theme-fantasy .progress-fill.bump {
+  box-shadow:
+    0 0 12px rgba(240, 216, 138, 0.42),
+    0 0 24px rgba(212, 168, 79, 0.26),
+    0 0 36px rgba(126, 214, 193, 0.18);
+}
+
+body.theme-fantasy .log {
+  background:
+    linear-gradient(180deg, rgba(24, 19, 15, 0.92), rgba(15, 12, 10, 0.96));
+  border: 1px solid rgba(212, 168, 79, 0.24);
+  box-shadow:
+    inset 0 0 20px rgba(0,0,0,0.28),
+    0 10px 30px rgba(0,0,0,0.32);
+  color: #f0e5c7;
+  font-family: "Courier New", ui-monospace, monospace;
+}
+
+body.theme-fantasy .log::before {
+  background:
+    repeating-linear-gradient(
+      to bottom,
+      rgba(255, 234, 184, 0.025) 0px,
+      rgba(255, 234, 184, 0.025) 1px,
+      rgba(0,0,0,0) 2px,
+      rgba(0,0,0,0) 4px
+    );
+  opacity: 0.16;
+}
+
+body.theme-fantasy .log::after {
+  background:
+    radial-gradient(circle at center, transparent 60%, rgba(0,0,0,0.22) 100%),
+    linear-gradient(rgba(212, 168, 79, 0.03), rgba(126, 214, 193, 0.02));
+  opacity: 0.38;
+}
+
+body.theme-fantasy .list::-webkit-scrollbar,
+body.theme-fantasy .log::-webkit-scrollbar {
+  width: 12px;
+}
+
+body.theme-fantasy .list::-webkit-scrollbar-track,
+body.theme-fantasy .log::-webkit-scrollbar-track {
+  background: rgba(31, 23, 16, 0.65);
+  border-radius: 999px;
+}
+
+body.theme-fantasy .list::-webkit-scrollbar-thumb,
+body.theme-fantasy .log::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(180deg, #8d6a38, #5f4323);
+  border-radius: 999px;
+  border: 2px solid rgba(31, 23, 16, 0.65);
+}
+
+body.theme-fantasy .log-toggle,
+body.theme-fantasy .audio-control {
+  background:
+    linear-gradient(180deg, rgba(82, 60, 34, 0.94), rgba(58, 41, 24, 0.94));
+  border: 1px solid rgba(212, 168, 79, 0.26);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 240, 204, 0.08),
+    0 6px 18px rgba(0,0,0,0.18);
+}
+
+body.theme-fantasy .log-toggle-box {
+  border: 1px solid rgba(212, 168, 79, 0.35);
+  background:
+    linear-gradient(180deg, rgba(33, 26, 20, 0.96), rgba(23, 18, 14, 0.98));
+  box-shadow:
+    inset 0 1px 4px rgba(0,0,0,0.35),
+    0 0 8px rgba(212, 168, 79, 0.06);
+}
+
+body.theme-fantasy .log-toggle input[type="checkbox"]:checked + .log-toggle-box {
+  background:
+    linear-gradient(180deg, #d4a84f, #9c7430);
+  border-color: rgba(255, 227, 145, 0.4);
+  box-shadow:
+    0 0 10px rgba(212, 168, 79, 0.18);
+}
+
+body.theme-fantasy .log-toggle-box::after {
+  border-color: #24170d;
+}
+
+body.theme-fantasy .audio-value {
+  color: #ffe39a;
+}
+
+body.theme-fantasy #volumeSlider {
+  background:
+    linear-gradient(90deg, rgba(212, 168, 79, 0.18), rgba(126, 214, 193, 0.18));
+  box-shadow: inset 0 0 8px rgba(212, 168, 79, 0.08);
+}
+
+body.theme-fantasy #volumeSlider::-webkit-slider-thumb {
+  border: 1px solid rgba(255, 229, 150, 0.52);
+  background:
+    linear-gradient(180deg, #e3bc67, #9a6f2b);
+  box-shadow:
+    0 0 8px rgba(212, 168, 79, 0.2);
+}
+
+body.theme-fantasy #volumeSlider::-moz-range-thumb {
+  border: 1px solid rgba(255, 229, 150, 0.52);
+  background:
+    linear-gradient(180deg, #e3bc67, #9a6f2b);
+  box-shadow:
+    0 0 8px rgba(212, 168, 79, 0.2);
+}
+
+body.theme-fantasy .step-number {
+  background:
+    linear-gradient(180deg, #d4a84f, #8b662c);
+  color: #20150c;
+  box-shadow:
+    0 2px 8px rgba(0,0,0,0.18);
+}
+
+body.theme-fantasy .obs-toast {
+  background:
+    linear-gradient(180deg, rgba(83, 60, 35, 0.96), rgba(56, 40, 23, 0.98));
+  border: 1px solid rgba(212, 168, 79, 0.28);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.35),
+    0 0 16px rgba(212, 168, 79, 0.08);
+}
+
+body.theme-fantasy .obs-toast::before {
+  background:
+    linear-gradient(180deg, rgba(240, 214, 140, 0.95), rgba(176, 129, 53, 0.95));
+  box-shadow: 0 0 10px rgba(212, 168, 79, 0.12);
+}
+
+body.theme-fantasy .obs-toast-title {
+  color: #fff0c2;
+}
+
+body.theme-fantasy .obs-toast-badge {
+  color: #2b1d10;
+  background:
+    linear-gradient(180deg, #f0d88a, #c59844);
+  box-shadow: none;
+}
+
+body.theme-fantasy .obs-toast-meta {
+  color: #ecdcb4;
+}
+
+body.theme-fantasy .obs-toast-meta .muted-line {
+  color: #d5c090;
+}
+
+body.theme-fantasy .theme-switcher select {
+  min-width: 190px;
+}
+
+body.theme-win98 select {
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+body.theme-win98 select option {
+  background: #ffffff;
+  color: #000000;
+}
+
+body.theme-fantasy.obs-mode {
+  background: transparent;
+}
+
+body.theme-fantasy.obs-mode .card {
+  background:
+    linear-gradient(180deg, rgba(64, 46, 27, 0.82), rgba(41, 29, 18, 0.86));
+}
+
 </style>
 
 </head>
@@ -1790,6 +2288,7 @@ body.theme-win98 .log-toggle input[type="checkbox"]:checked + .log-toggle-box::a
     <select id="themeSelect">
       <option value="modern">Modern</option>
       <option value="win98">Windows 98</option>
+	  <option value="fantasy">Fantasy</option>
     </select>
   </div>
   
@@ -2166,6 +2665,9 @@ const THEME_KEY = "ap_theme";
   let hideFoundHints = localStorage.getItem("hideFoundHints") === "true";
   let showBounced = localStorage.getItem("showBounced") === "true";
   let volumeLevel = parseFloat(localStorage.getItem("volume") || "1");
+
+  let keepAliveTimer = null;
+  const KEEPALIVE_INTERVAL_MS = 4 * 60 * 1000;
 
   /* ==========================================================================
    * URL PARAMS / VIEW MODE
@@ -2653,6 +3155,41 @@ const THEME_KEY = "ap_theme";
     sendBrowserMessage({ type: "send-ap", payload });
   }
 
+
+  /**
+   * Keep the Render service awake while this page is open.
+   *
+   * Frontend-only version:
+   * hits the current site every few minutes.
+   *
+   * @returns {void}
+   */
+  function startKeepAlive() {
+    stopKeepAlive();
+
+    keepAliveTimer = setInterval(() => {
+      fetch("/", {
+        method: "GET",
+        cache: "no-store"
+      }).catch(() => {
+        // ignore temporary keepalive errors
+      });
+    }, KEEPALIVE_INTERVAL_MS);
+  }
+
+  /**
+   * Stop the keepalive timer.
+   *
+   * @returns {void}
+   */
+  function stopKeepAlive() {
+    if (keepAliveTimer) {
+      clearInterval(keepAliveTimer);
+      keepAliveTimer = null;
+    }
+  }
+
+
   /**
    * Ensure the browser is connected to the local proxy WebSocket.
    *
@@ -2666,7 +3203,8 @@ const THEME_KEY = "ap_theme";
 
     browserSocket.addEventListener("open", () => {
       log("Browser connected to local proxy.", "good");
-
+	  startKeepAlive();
+	  
       const shouldAuto = applyUrlParams();
 
       if (shouldAuto) {
@@ -2684,6 +3222,7 @@ const THEME_KEY = "ap_theme";
 
     browserSocket.addEventListener("close", (event) => {
       clearReconnectTimer();
+	  stopKeepAlive();
       log(`Browser proxy socket closed. Code: ${event.code} Reason: ${event.reason || "none"}`, "bad");
       setStatus("Disconnected", "bad");
     });
@@ -3940,10 +4479,12 @@ const THEME_KEY = "ap_theme";
    * ========================================================================== */
 
 function applyTheme(theme) {
-  document.body.classList.remove("theme-win98");
+  document.body.classList.remove("theme-win98", "theme-fantasy");
 
   if (theme === "win98") {
     document.body.classList.add("theme-win98");
+  } else if (theme === "fantasy") {
+    document.body.classList.add("theme-fantasy");
   }
 }
 
@@ -4193,6 +4734,10 @@ document.addEventListener("DOMContentLoaded", () => {
   applyViewMode();
   applyAutoMode();
 });
+
+  window.addEventListener("beforeunload", () => {
+    stopKeepAlive();
+  });
 
   document.addEventListener("click", () => {
     getAudioCtx();
