@@ -6,6 +6,7 @@
   <title>Archipelago Web Panel</title>
 
 <style>
+
 :root {
   --bg: #05070f;
   --panel: rgba(10, 16, 40, 0.85);
@@ -55,6 +56,22 @@ body {
   margin-bottom: 20px;
 }
 
+.theme-switcher {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.theme-switcher label {
+  margin: 0;
+  font-size: 12px;
+}
+
+.theme-switcher select {
+  width: auto;
+  min-width: 150px;
+}
+
 /* =========================
    STATUS (FIXED + ENHANCED)
    ========================= */
@@ -90,7 +107,6 @@ body {
 .status.good {
   color: var(--text);
   border-color: rgba(0, 255, 156, 0.6);
-
   box-shadow:
     0 0 8px rgba(0,255,156,0.4),
     0 0 20px rgba(0,255,156,0.2);
@@ -159,9 +175,7 @@ body {
   border: 1px solid rgba(0, 234, 255, 0.25);
   border-radius: 16px;
   padding: 16px;
-
   backdrop-filter: blur(10px);
-
   box-shadow:
     0 0 0 1px rgba(0, 234, 255, 0.08),
     0 0 20px rgba(0, 234, 255, 0.08),
@@ -211,7 +225,6 @@ input:focus, select:focus {
 button {
   background: linear-gradient(90deg, #005bff, #00eaff);
   color: #fff;
-
   box-shadow:
     0 0 10px rgba(0,234,255,0.4),
     inset 0 0 8px rgba(255,255,255,0.1);
@@ -302,25 +315,20 @@ button.secondary {
   overflow-y: auto;
   overflow-x: hidden;
   white-space: pre-wrap;
-
   background: rgba(2, 6, 17, 0.58);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-
   border-radius: 14px;
   padding: 12px;
   border: 1px solid rgba(0, 234, 255, 0.22);
-
   box-shadow:
     inset 0 0 20px rgba(0, 234, 255, 0.06),
     0 0 18px rgba(0, 234, 255, 0.10),
     0 10px 30px rgba(0,0,0,0.35);
-
   color: #bfe7ff;
   font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   font-size: 12px;
   line-height: 1.45;
-  
 }
 
 .log::before,
@@ -347,9 +355,9 @@ button.secondary {
 
 .log::after {
   background:
-    linear-gradient(rgba(0, 234, 255, 0.05), rgba(255, 43, 214, 0.03)),
-    radial-gradient(circle at center, rgba(255,255,255,0.04), transparent 70%);
-  opacity: 0.45;
+    radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.28) 100%),
+    linear-gradient(rgba(0, 234, 255, 0.05), rgba(255, 43, 214, 0.03));
+  opacity: 0.55;
 }
 
 .log {
@@ -367,17 +375,11 @@ button.secondary {
   54% { opacity: 1; }
 }
 
-.log::after {
-  background:
-    radial-gradient(circle at center, transparent 55%, rgba(0,0,0,0.28) 100%),
-    linear-gradient(rgba(0, 234, 255, 0.05), rgba(255, 43, 214, 0.03));
-  opacity: 0.55;
-}
-
 /* Right column */
 .right-card {
   height: 600px;
   min-height: 600px;
+  min-width: 0;
 }
 
 .items-section {
@@ -420,25 +422,18 @@ button.secondary {
 
 /* Progress bar */
 .progress-bar {
-  height: 8px;
-  background: rgba(255,255,255,0.08);
-  border-radius: 999px;
-  overflow: hidden;
-  margin-top: 6px;
-}
-
-.progress-bar {
   position: relative;
   height: 14px;
   background: rgba(0, 0, 0, 0.6);
   border-radius: 999px;
   overflow: hidden;
   border: 1px solid rgba(0, 234, 255, 0.25);
-
+  margin-top: 6px;
   box-shadow:
     inset 0 0 10px rgba(0, 234, 255, 0.08),
     0 0 12px rgba(0, 234, 255, 0.15);
 }
+
 .progress-fill.bump {
   box-shadow:
     0 0 14px #00ffcc,
@@ -451,14 +446,12 @@ button.secondary {
   content: "";
   position: absolute;
   inset: 0;
-
   background: linear-gradient(
     120deg,
     transparent,
     rgba(255,255,255,0.35),
     transparent
   );
-
   animation: neonSweep 2s linear infinite;
 }
 
@@ -471,22 +464,18 @@ button.secondary {
   position: relative;
   height: 100%;
   width: 0%;
-
   background: linear-gradient(
     90deg,
     #00eaff,
     #00ff9c,
     #7cff00
   );
-
   box-shadow:
     0 0 10px #00ffcc,
     0 0 20px rgba(0,255,200,0.6);
-
   transition:
     width 0.8s cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 0.25s ease;
-
   overflow: hidden;
 }
 
@@ -507,12 +496,8 @@ button.secondary {
 }
 
 @keyframes progressShimmer {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-350%);
-  }
+  from { transform: translateX(0); }
+  to { transform: translateX(-350%); }
 }
 
 /* Responsive */
@@ -1035,7 +1020,7 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 }
 
 #hints.list {
-  max-height: 600px;
+  max-height: 320px;
   overflow-y: auto;
   overflow-x: hidden;
 }
@@ -1095,6 +1080,17 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 8px;
+}
+
+.hints-head {
+  align-items: flex-start;
+}
+
+.hints-head-main {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
 }
 
 .hint-title {
@@ -1158,34 +1154,9 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   min-height: 0;
 }
 
-#hints.list {
-  max-height: 320px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
 #viewDescription {
   margin-top: 6px;
   line-height: 1.4;
-}
-
-/* ADD near the other hint styles */
-.hints-head {
-  align-items: flex-start;
-}
-
-.hints-head-main {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-
-@media (max-width: 700px) {
-  .hints-head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
 }
 
 .step-number {
@@ -1223,10 +1194,8 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   font-weight: 700;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-
   color: #08101d;
   background: linear-gradient(180deg, #9aa8c7, #6f89b0);
-
   box-shadow:
     0 0 8px rgba(154, 168, 199, 0.4),
     inset 0 0 4px rgba(255,255,255,0.2);
@@ -1250,17 +1219,14 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   width: 100%;
   margin: 0 0 10px;
   padding: 10px 14px;
-
   border: 1px solid var(--border);
   border-radius: 12px;
   background: rgba(0, 234, 255, 0.06);
   color: var(--text);
-
   cursor: pointer;
   font: inherit;
   font-weight: 700;
   text-align: left;
-
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -1296,36 +1262,6 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   display: none;
 }
 
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-.hints-card {
-  min-height: 0;
-}
-
-#hints.list {
-  max-height: 320px;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
-.right-column {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  min-height: 0;
-}
-
-.right-card {
-  height: 600px;
-  min-height: 600px;
-  min-width: 0;
-}
-
 #sessionCard {
   display: flex;
   flex-direction: column;
@@ -1346,25 +1282,6 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   min-height: 0;
 }
 
-.items-section {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-#items.list {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  max-height: 100%;
-}
-
-.collapsible-section.collapsed .collapsible-content {
-  display: none;
-}
-
 #sessionCard.collapsed-card,
 #sessionCard:has(.collapsible-section.collapsed) {
   height: auto;
@@ -1376,19 +1293,423 @@ body.obs-mode.view-item-alert .obs-toast-layer {
   min-height: 0;
 }
 
+@media (max-width: 700px) {
+  .hints-head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+/* =========================
+   WINDOWS 98 THEME
+   Applies only when body has theme-win98
+   ========================= */
+
+body.theme-win98 {
+  --bg: #008080;
+  --panel: #c0c0c0;
+  --panel2: #c0c0c0;
+  --text: #000000;
+  --muted: #4f4f4f;
+  --accent: #000080;
+  --accent2: #000080;
+  --good: #008000;
+  --bad: #800000;
+  --border: #808080;
+  --win-face: #c0c0c0;
+  --win-light: #ffffff;
+  --win-shadow: #808080;
+  --win-dark: #000000;
+  --win-blue: #000080;
+
+  font-family: Tahoma, "MS Sans Serif", Arial, sans-serif;
+  color: var(--text);
+  background: var(--bg);
+  background-image: none;
+}
+
+body.theme-win98 .wrap {
+  padding: 10px;
+}
+
+body.theme-win98 .topbar {
+  align-items: stretch;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+body.theme-win98 .topbar > div:first-child {
+  flex: 1;
+  padding: 6px 8px;
+  background: var(--win-face);
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf;
+}
+
+body.theme-win98 h1,
+body.theme-win98 h2 {
+  font-weight: 700;
+  color: #000;
+}
+
+body.theme-win98 h1 {
+  font-size: 20px;
+  margin-bottom: 4px;
+}
+
+body.theme-win98 h2 {
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+body.theme-win98 .card,
+body.theme-win98 .item,
+body.theme-win98 .latest-item,
+body.theme-win98 .hint-item,
+body.theme-win98 .obs-param-menu,
+body.theme-win98 .audio-control,
+body.theme-win98 .log-toggle,
+body.theme-win98 .status,
+body.theme-win98 .theme-switcher {
+  background: var(--win-face) !important;
+  color: #000 !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+body.theme-win98 .card {
+  padding: 10px;
+}
+
+body.theme-win98 label,
+body.theme-win98 .muted,
+body.theme-win98 .small,
+body.theme-win98 .hint-meta,
+body.theme-win98 .log-toggle-text,
+body.theme-win98 .audio-label,
+body.theme-win98 .audio-value {
+  color: #000 !important;
+}
+
+body.theme-win98 input,
+body.theme-win98 select,
+body.theme-win98 textarea {
+  width: 100%;
+  border-radius: 0 !important;
+  border: none !important;
+  background: #fff !important;
+  color: #000 !important;
+  padding: 6px 8px;
+  box-shadow:
+    inset -1px -1px 0 var(--win-light),
+    inset 1px 1px 0 var(--win-shadow),
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 var(--win-dark);
+}
+
+body.theme-win98 input:focus,
+body.theme-win98 select:focus,
+body.theme-win98 textarea:focus {
+  outline: 1px dotted #000;
+  outline-offset: -4px;
+  box-shadow:
+    inset -1px -1px 0 var(--win-light),
+    inset 1px 1px 0 var(--win-shadow),
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 var(--win-dark);
+}
+
+body.theme-win98 button,
+body.theme-win98 button.secondary,
+body.theme-win98 .collapsible-header {
+  width: 100%;
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--win-face) !important;
+  color: #000 !important;
+  padding: 8px 12px;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf !important;
+  transform: none !important;
+}
+
+body.theme-win98 button:hover,
+body.theme-win98 button.secondary:hover,
+body.theme-win98 .collapsible-header:hover,
+body.theme-win98 .log-toggle:hover,
+body.theme-win98 .audio-control:hover {
+  transform: none !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf !important;
+}
+
+body.theme-win98 button:active,
+body.theme-win98 .collapsible-header:active {
+  box-shadow:
+    inset -1px -1px 0 var(--win-light),
+    inset 1px 1px 0 var(--win-dark),
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 var(--win-shadow) !important;
+}
+
+body.theme-win98 .status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  max-width: 460px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+body.theme-win98 .status::before {
+  width: 8px;
+  height: 8px;
+  border-radius: 0 !important;
+  background: #808080 !important;
+  box-shadow: none !important;
+  border: none !important;
+  animation: none !important;
+}
+
+body.theme-win98 .status.good::before {
+  background: #008000 !important;
+}
+
+body.theme-win98 .status.bad::before {
+  background: #800000 !important;
+}
+
+body.theme-win98 .status.connecting::before {
+  background: #000080 !important;
+}
+
+body.theme-win98 .log {
+  height: 600px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  white-space: pre-wrap;
+  background: #ffffff !important;
+  color: #000000 !important;
+  border-radius: 0 !important;
+  padding: 10px;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-light),
+    inset 1px 1px 0 var(--win-shadow),
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 var(--win-dark) !important;
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  line-height: 1.4;
+  animation: none !important;
+}
+
+body.theme-win98 .log::before,
+body.theme-win98 .log::after,
+body.theme-win98 .progress-fill::before,
+body.theme-win98 .progress-fill::after,
+body.theme-win98 .obs-toast::after {
+  display: none !important;
+}
+
+body.theme-win98 .progress-bar {
+  height: 18px;
+  background: #fff !important;
+  border-radius: 0 !important;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-light),
+    inset 1px 1px 0 var(--win-shadow),
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 var(--win-dark) !important;
+}
+
+body.theme-win98 .progress-fill {
+  background: var(--win-blue) !important;
+  box-shadow: none !important;
+  transition: width 0.25s linear;
+}
+
+body.theme-win98 .hint-item,
+body.theme-win98 .latest-item,
+body.theme-win98 .item {
+  margin-bottom: 8px;
+  padding: 10px;
+}
+
+body.theme-win98 .hint-item::before,
+body.theme-win98 .latest-item::before {
+  display: none !important;
+}
+
+body.theme-win98 .hint-badge,
+body.theme-win98 .hint-badge-found,
+body.theme-win98 .hint-badge-unfound,
+body.theme-win98 .hint-badge-important,
+body.theme-win98 .obs-toast-badge,
+body.theme-win98 .step-optional {
+  border-radius: 0 !important;
+  font-size: 11px;
+  padding: 2px 6px;
+  background: #e0e0e0 !important;
+  color: #000 !important;
+  border: 1px solid #808080 !important;
+  box-shadow: none !important;
+  text-transform: none !important;
+}
+
+body.theme-win98 .step-number {
+  border-radius: 0 !important;
+  background: #000080 !important;
+  color: #fff !important;
+}
+
+body.theme-win98 #volumeSlider {
+  appearance: auto;
+  background: transparent !important;
+  box-shadow: none !important;
+  height: auto;
+}
+
+body.theme-win98 #volumeSlider::-webkit-slider-thumb,
+body.theme-win98 #volumeSlider::-moz-range-thumb,
+body.theme-win98 #volumeSlider::-webkit-slider-runnable-track,
+body.theme-win98 #volumeSlider::-moz-range-track {
+  all: revert;
+}
+
+body.theme-win98 .list::-webkit-scrollbar,
+body.theme-win98 .log::-webkit-scrollbar {
+  width: 16px;
+}
+
+body.theme-win98 .list::-webkit-scrollbar-track,
+body.theme-win98 .log::-webkit-scrollbar-track {
+  background: #c0c0c0;
+  border-radius: 0;
+}
+
+body.theme-win98 .list::-webkit-scrollbar-thumb,
+body.theme-win98 .log::-webkit-scrollbar-thumb {
+  background: #c0c0c0;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf;
+}
+
+body.theme-win98 .obs-toast {
+  border-radius: 0 !important;
+  background: var(--win-face) !important;
+  color: #000 !important;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf !important;
+}
+
+body.theme-win98 .obs-toast::before {
+  width: 100%;
+  height: 18px;
+  inset: 0 0 auto 0;
+  background: linear-gradient(90deg, #000080, #1084d0) !important;
+  box-shadow: none !important;
+}
+
+body.theme-win98 .obs-toast-title,
+body.theme-win98 .obs-toast-meta {
+  position: relative;
+  z-index: 1;
+}
+
+body.theme-win98 .obs-toast-title {
+  color: #fff !important;
+  padding-top: 1px;
+}
+
+body.theme-win98 .obs-toast-header {
+  align-items: flex-start;
+  padding-top: 2px;
+}
+
+body.theme-win98 .obs-toast-badge {
+  margin-top: 20px;
+}
+
+body.theme-win98 .card:not(#logCard) h2 {
+  border-top: 1px solid #808080;
+}
+
+body.theme-win98 .collapsible-header {
+  background: var(--win-face) !important;
+  box-shadow:
+    inset -1px -1px 0 var(--win-dark),
+    inset 1px 1px 0 var(--win-light),
+    inset -2px -2px 0 var(--win-shadow),
+    inset 2px 2px 0 #dfdfdf !important;
+}
+
+body.theme-win98 .collapsible-header:hover {
+  transform: none !important;
+}
+
+body.theme-win98 .obs-param-menu,
+body.theme-win98 .theme-switcher {
+  padding: 8px;
+}
+
+body.theme-win98.obs-mode,
+body.theme-win98.obs-mode .card {
+  background: transparent;
+}
+
 </style>
 
 </head>
 <body>
   <div class="wrap">
-    <div class="topbar">
-      <div>
-        <h1>Archipelago Web Panel</h1>
-        <div class="muted">Archipelago Web Interface</div>
-      </div>
-	  
-      <div id="status" class="status">Disconnected</div>
-    </div>
+<div class="topbar">
+  <div>
+    <h1>Archipelago Web Panel</h1>
+    <div class="muted">Archipelago Web Interface</div>
+  </div>
+
+  <div class="theme-switcher">
+    <label for="themeSelect">Theme</label>
+    <select id="themeSelect">
+      <option value="modern">Modern</option>
+      <option value="win98">Windows 98</option>
+    </select>
+  </div>
+  
+  <div id="status" class="status">Disconnected</div>
+</div>
 
 <div class="grid" id="mainGrid">
   <div class="card stack" id="connectionCard">
@@ -1717,6 +2038,9 @@ body.obs-mode.view-item-alert .obs-toast-layer {
 
 const helpToggle = document.getElementById("helpToggle");
 const helpSection = document.querySelector(".help-section");
+
+const themeSelectEl = document.getElementById("themeSelect");
+const THEME_KEY = "ap_theme";
 
   /* ==========================================================================
    * CONSTANTS / STORAGE KEYS
@@ -3530,6 +3854,28 @@ const helpSection = document.querySelector(".help-section");
    * UI EVENT WIRING
    * ========================================================================== */
 
+function applyTheme(theme) {
+  document.body.classList.remove("theme-win98");
+
+  if (theme === "win98") {
+    document.body.classList.add("theme-win98");
+  }
+}
+
+function loadTheme() {
+  const savedTheme = localStorage.getItem(THEME_KEY) || "modern";
+  applyTheme(savedTheme);
+
+  if (themeSelectEl) {
+    themeSelectEl.value = savedTheme;
+  }
+}
+
+function saveTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+}
+
 function setupCollapsibles() {
   const sections = document.querySelectorAll(".collapsible-section");
 
@@ -3723,40 +4069,45 @@ if (helpToggle && helpSection) {
    * STARTUP
    * ========================================================================== */
 
-  document.addEventListener("DOMContentLoaded", () => {
-    loadLastApUrl();
+document.addEventListener("DOMContentLoaded", () => {
+  loadLastApUrl();
+  loadTheme();
 
-    const viewDescriptions = {
-      "item-alert": "Shows only popup item alerts. No main panel cards.",
-      "log": "Shows just the live log overlay.",
-      "full": "Shows the normal full panel layout.",
-      "compact": "Shows a minimal session overlay without the full item list."
+  themeSelectEl?.addEventListener("change", () => {
+    saveTheme(themeSelectEl.value);
+  });
+
+  const viewDescriptions = {
+    "item-alert": "Shows only popup item alerts. No main panel cards.",
+    "log": "Shows just the live log overlay.",
+    "full": "Shows the normal full panel layout.",
+    "compact": "Shows a minimal session overlay without the full item list."
+  };
+
+  const viewSelect = document.getElementById("obsViewSelect");
+  const viewDesc = document.getElementById("viewDescription");
+
+  if (viewSelect && viewDesc) {
+    const updateViewDescription = () => {
+      viewDesc.textContent = viewDescriptions[viewSelect.value] || "";
     };
 
-    const viewSelect = document.getElementById("obsViewSelect");
-    const viewDesc = document.getElementById("viewDescription");
+    viewSelect.addEventListener("change", updateViewDescription);
+    updateViewDescription();
+  }
 
-    if (viewSelect && viewDesc) {
-      const updateViewDescription = () => {
-        viewDesc.textContent = viewDescriptions[viewSelect.value] || "";
-      };
-
-      viewSelect.addEventListener("change", updateViewDescription);
-      updateViewDescription();
-    }
-
-    loadOrCreateUuid();
-	setupCollapsibles();
-    ensureBrowserSocket();
-    renderRoom();
-    renderPlayers();
-    renderSession();
-    renderItems();
-    renderLatestItem();
-    renderHints();
-    applyViewMode();
-    applyAutoMode();
-  });
+  loadOrCreateUuid();
+  setupCollapsibles();
+  ensureBrowserSocket();
+  renderRoom();
+  renderPlayers();
+  renderSession();
+  renderItems();
+  renderLatestItem();
+  renderHints();
+  applyViewMode();
+  applyAutoMode();
+});
 
   document.addEventListener("click", () => {
     getAudioCtx();
