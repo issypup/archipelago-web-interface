@@ -1689,6 +1689,91 @@ body.theme-win98.obs-mode .card {
   background: transparent;
 }
 
+/* =========================
+   WINDOWS 98 CHECKBOX FIXES
+   ========================= */
+
+body.theme-win98 .obs-check input[type="checkbox"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 13px;
+  height: 13px;
+  margin: 0;
+  background: #ffffff;
+  border: none;
+  border-radius: 0;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset 1px 1px 0 #808080,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #000000;
+  position: relative;
+  cursor: pointer;
+  vertical-align: middle;
+}
+
+body.theme-win98 .obs-check input[type="checkbox"]:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid #000;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+body.theme-win98 .obs-check input[type="checkbox"]:focus {
+  outline: 1px dotted #000;
+  outline-offset: 1px;
+}
+
+/* Custom "Show bounced" checkbox */
+body.theme-win98 .log-toggle {
+  border-radius: 0 !important;
+  padding: 6px 10px;
+  background: var(--win-face) !important;
+}
+
+body.theme-win98 .log-toggle-box {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 13px;
+  border: none !important;
+  border-radius: 0 !important;
+  background: #ffffff !important;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset 1px 1px 0 #808080,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #000000 !important;
+}
+
+body.theme-win98 .log-toggle-box::after {
+  left: 4px;
+  top: 1px;
+  width: 3px;
+  height: 7px;
+  border: solid #000 !important;
+  border-width: 0 2px 2px 0 !important;
+}
+
+body.theme-win98 .log-toggle input[type="checkbox"]:checked + .log-toggle-box {
+  background: #ffffff !important;
+  border: none !important;
+  box-shadow:
+    inset -1px -1px 0 #ffffff,
+    inset 1px 1px 0 #808080,
+    inset -2px -2px 0 #dfdfdf,
+    inset 2px 2px 0 #000000 !important;
+}
+
+body.theme-win98 .log-toggle input[type="checkbox"]:checked + .log-toggle-box::after {
+  transform: rotate(45deg) scale(1);
+  opacity: 1;
+}
+
 </style>
 
 </head>
