@@ -4515,7 +4515,11 @@ function setupCollapsibles() {
 
     // ✅ Default = collapsed, unless user has saved preference
     const stored = localStorage.getItem(storageKey);
-    const isCollapsed = stored === null ? true : stored === "true";
+    const defaultCollapsed = !isAutoMode; // auto = expanded, normal = collapsed
+
+	const isCollapsed = isAutoMode
+  ? false
+  : (stored === null ? true : stored === "true");
 
     if (isCollapsed) {
       section.classList.add("collapsed");
